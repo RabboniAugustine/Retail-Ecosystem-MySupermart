@@ -519,6 +519,46 @@ const BLANK_FORM: ProductForm = {
 
 const CATEGORIES = ['Dairy', 'Bakery', 'Beverages', 'Produce', 'Grains', 'Oils', 'Meat', 'Frozen', 'Household', 'Other']
 
+type RemovalRow = {
+  id: number; product_name: string; sku: string; quantity: number
+  unit_cost: number; loss_value: number; reason: string; note: string | null; removed_at: string
+}
+
+const REMOVAL_REASONS = ['Returned to supplier', 'Expired', 'Damaged', 'Lost / stolen', 'Discontinued', 'Entered by mistake', 'Other']
+
+function ProductFields({ form, setForm }: { form: ProductForm; setForm: React.Dispatch<React.SetStateAction<ProductForm>> }) {
+  const set = (k: keyof ProductForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label="Product Name *"><input className="input-field" value={form.name} onChange={set('name')} placeholder="e.g. Whole Milk 1L" /></Field>
+        <Field label="SKU *"><input className="input-field" value={form.sku} onChange={set('sku')} placeholder="e.g. DRY-001" /></Field>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label="Barcode"><input className="input-field" value={form.barcode} onChange={set('barcode')} placeholder="Scan or type" /></Field>
+        <Field label="Category">
+          <select className="input-field" value={form.category} onChange={set('category')}>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label="Selling Price (₵) *"><input className="input-field" type="number" step="0.01" min="0" value={form.price} onChange={set('price')} placeholder="0.00" /></Field>
+        <Field label="Cost Price (₵)"><input className="input-field" type="number" step="0.01" min="0" value={form.cost} onChange={set('cost')} placeholder="0.00" /></Field>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label="Quantity in Stock"><input className="input-field" type="number" min="0" value={form.stock} onChange={set('stock')} /></Field>
+        <Field label="Reorder Level"><input className="input-field" type="number" min="0" value={form.reorder_level} onChange={set('reorder_level')} /></Field>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label="Supplier"><input className="input-field" value={form.supplier} onChange={set('supplier')} placeholder="Supplier name" /></Field>
+        <Field label="Expiry Date"><input className="input-field" type="date" value={form.expiry_date} onChange={set('expiry_date')} /></Field>
+      </div>
+    </>
+  )
+}
+
 function Inventory({ refresh }: { refresh: number }) {
   const [rows, setRows] = useState<InventoryRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -528,6 +568,13 @@ function Inventory({ refresh }: { refresh: number }) {
   const [saving, setSaving] = useState(false)
   const [stockSaving, setStockSaving] = useState<number | null>(null)
   const stockEdits = useRef<Record<number, number>>({})
+  const [formError, setFormError] = useState('')
+  const [editRow, setEditRow] = useState<InventoryRow | null>(null)
+  const [delRow, setDelRow] = useState<InventoryRow | null>(null)
+  const [delReason, setDelReason] = useState('')
+  const [delNote, setDelNote] = useState('')
+  const [showLog, setShowLog] = useState(false)
+  const [removals, setRemovals] = useState<RemovalRow[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -546,26 +593,81 @@ function Inventory({ refresh }: { refresh: number }) {
     r.ms_products?.category?.toLowerCase().includes(query.toLowerCase())
   )
 
+  const friendlyError = (e: { code?: string; message: string }) =>
+    e.code === '23505' ? 'That SKU is already used by another product.' : e.message
+
   const handleAdd = async () => {
     if (!form.name || !form.sku || !form.price) return
-    setSaving(true)
+    setSaving(true); setFormError('')
     const { data: prod, error } = await supabase.from('ms_products').insert({
-      name: form.name, sku: form.sku, barcode: form.barcode,
-      category: form.category, price: Number(form.price), cost: Number(form.cost)
+      name: form.name.trim(), sku: form.sku.trim(), barcode: form.barcode,
+      category: form.category, price: Number(form.price), cost: Number(form.cost || 0)
     }).select().single()
-    if (!error && prod) {
-      await supabase.from('ms_inventory').insert({
-        product_id: prod.id,
-        stock: Number(form.stock),
-        reorder_level: Number(form.reorder_level),
-        expiry_date: form.expiry_date || null,
-        supplier: form.supplier,
-      })
-      setShowAdd(false)
-      setForm(BLANK_FORM)
-      load()
-    }
+    if (error || !prod) { setFormError(friendlyError(error ?? { message: 'Could not save product' })); setSaving(false); return }
+    const { error: invErr } = await supabase.from('ms_inventory').insert({
+      product_id: prod.id,
+      stock: Number(form.stock || 0),
+      reorder_level: Number(form.reorder_level || 0),
+      expiry_date: form.expiry_date || null,
+      supplier: form.supplier,
+    })
+    if (invErr) { setFormError(invErr.message); setSaving(false); return }
+    setShowAdd(false); setForm(BLANK_FORM); load()
     setSaving(false)
+  }
+
+  const openEdit = (row: InventoryRow) => {
+    const p = row.ms_products
+    setFormError('')
+    setForm({
+      name: p?.name ?? '', sku: p?.sku ?? '', barcode: p?.barcode ?? '', category: p?.category ?? 'Other',
+      price: String(p?.price ?? ''), cost: String(p?.cost ?? ''), stock: String(row.stock),
+      reorder_level: String(row.reorder_level), expiry_date: row.expiry_date ?? '', supplier: row.supplier ?? '',
+    })
+    setEditRow(row)
+  }
+
+  const closeEdit = () => { setEditRow(null); setForm(BLANK_FORM); setFormError('') }
+
+  const handleEditSave = async () => {
+    if (!editRow) return
+    if (!form.name.trim() || !form.sku.trim() || !form.price) { setFormError('Name, SKU and selling price are required.'); return }
+    setSaving(true); setFormError('')
+    const { error: pErr } = await supabase.from('ms_products').update({
+      name: form.name.trim(), sku: form.sku.trim(), barcode: form.barcode,
+      category: form.category, price: Number(form.price), cost: Number(form.cost || 0),
+    }).eq('id', editRow.product_id)
+    if (pErr) { setFormError(friendlyError(pErr)); setSaving(false); return }
+    const { error: iErr } = await supabase.from('ms_inventory').update({
+      stock: Number(form.stock || 0), reorder_level: Number(form.reorder_level || 0),
+      expiry_date: form.expiry_date || null, supplier: form.supplier,
+      updated_at: new Date().toISOString(),
+    }).eq('product_id', editRow.product_id)
+    if (iErr) { setFormError(iErr.message); setSaving(false); return }
+    closeEdit(); load()
+    setSaving(false)
+  }
+
+  const openDelete = (row: InventoryRow) => { setDelRow(row); setDelReason(''); setDelNote(''); setFormError('') }
+  const closeDelete = () => { setDelRow(null); setDelReason(''); setDelNote(''); setFormError('') }
+
+  const handleDelete = async () => {
+    if (!delRow) return
+    if (!delReason) { setFormError('Please choose a reason.'); return }
+    if (delReason === 'Other' && !delNote.trim()) { setFormError('Please describe the reason.'); return }
+    setSaving(true); setFormError('')
+    const { error } = await supabase.rpc('ms_remove_product', {
+      p_product_id: delRow.product_id, p_reason: delReason, p_note: delNote.trim() || null,
+    })
+    if (error) { setFormError(error.message); setSaving(false); return }
+    closeDelete(); load()
+    setSaving(false)
+  }
+
+  const openLog = async () => {
+    setShowLog(true)
+    const { data } = await supabase.from('ms_product_removals').select('*').order('removed_at', { ascending: false }).limit(200)
+    setRemovals((data as RemovalRow[] | null) ?? [])
   }
 
   const handleStockBlur = async (row: InventoryRow) => {
@@ -601,18 +703,19 @@ function Inventory({ refresh }: { refresh: number }) {
           <button onClick={load} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#6b7280', padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
             <Icon d={ICONS.refresh} size={13} /> Sync
           </button>
-          <Btn onClick={() => setShowAdd(true)}><Icon d={ICONS.plus} size={14} /> Add Product</Btn>
+          <Btn variant="ghost" onClick={openLog}>Removal Log</Btn>
+          <Btn onClick={() => { setFormError(''); setShowAdd(true) }}><Icon d={ICONS.plus} size={14} /> Add Product</Btn>
         </div>
 
         {rows.length === 0 ? (
           <EmptyState icon="📦" title="No products yet" sub="Add your first product to get started"
-            action={<Btn onClick={() => setShowAdd(true)}><Icon d={ICONS.plus} size={14} /> Add Product</Btn>} />
+            action={<Btn onClick={() => { setFormError(''); setShowAdd(true) }}><Icon d={ICONS.plus} size={14} /> Add Product</Btn>} />
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  {['Product', 'SKU', 'Category', 'Stock', 'Reorder At', 'Expiry', 'Supplier', 'Cost', 'Price', 'Margin', 'Status'].map(h => (
+                  {['Product', 'SKU', 'Category', 'Stock', 'Reorder At', 'Expiry', 'Supplier', 'Cost', 'Price', 'Margin', 'Status', 'Actions'].map(h => (
                     <th key={h} style={{ textAlign: 'left', padding: '7px 10px', fontSize: 10, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -649,6 +752,12 @@ function Inventory({ refresh }: { refresh: number }) {
                           {status === 'out' ? 'Out' : status === 'low' ? 'Low' : 'OK'}
                         </span>
                       </td>
+                      <td style={{ padding: '10px 10px' }}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => openEdit(row)} title="Edit product" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button>
+                          <button onClick={() => openDelete(row)} title="Remove product" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.trash} size={14} /></button>
+                        </div>
+                      </td>
                     </tr>
                   )
                 })}
@@ -659,37 +768,79 @@ function Inventory({ refresh }: { refresh: number }) {
       </div>
 
       {showAdd && (
-        <Modal title="Add New Product" onClose={() => { setShowAdd(false); setForm(BLANK_FORM) }}>
+        <Modal title="Add New Product" onClose={() => { setShowAdd(false); setForm(BLANK_FORM); setFormError('') }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Product Name *"><input className="input-field" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Whole Milk 1L" /></Field>
-              <Field label="SKU *"><input className="input-field" value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} placeholder="e.g. DRY-001" /></Field>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Barcode"><input className="input-field" value={form.barcode} onChange={e => setForm(f => ({ ...f, barcode: e.target.value }))} placeholder="Scan or type" /></Field>
-              <Field label="Category">
-                <select className="input-field" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </Field>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Selling Price (₵) *"><input className="input-field" type="number" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="0.00" /></Field>
-              <Field label="Cost Price (₵)"><input className="input-field" type="number" step="0.01" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} placeholder="0.00" /></Field>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Opening Stock"><input className="input-field" type="number" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} /></Field>
-              <Field label="Reorder Level"><input className="input-field" type="number" value={form.reorder_level} onChange={e => setForm(f => ({ ...f, reorder_level: e.target.value }))} /></Field>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Supplier"><input className="input-field" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} placeholder="Supplier name" /></Field>
-              <Field label="Expiry Date"><input className="input-field" type="date" value={form.expiry_date} onChange={e => setForm(f => ({ ...f, expiry_date: e.target.value }))} /></Field>
-            </div>
+            <ProductFields form={form} setForm={setForm} />
+            {formError && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>{formError}</div>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
-              <Btn variant="ghost" onClick={() => { setShowAdd(false); setForm(BLANK_FORM) }}>Cancel</Btn>
+              <Btn variant="ghost" onClick={() => { setShowAdd(false); setForm(BLANK_FORM); setFormError('') }}>Cancel</Btn>
               <Btn onClick={handleAdd} disabled={saving || !form.name || !form.sku || !form.price}>{saving ? 'Saving…' : 'Add Product'}</Btn>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {editRow && (
+        <Modal title="Edit Product" onClose={closeEdit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <ProductFields form={form} setForm={setForm} />
+            {formError && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>{formError}</div>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+              <Btn variant="ghost" onClick={closeEdit}>Cancel</Btn>
+              <Btn onClick={handleEditSave} disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {delRow && (
+        <Modal title="Remove Product" onClose={closeDelete}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+              You are removing <b style={{ color: '#e8ecf4' }}>{delRow.ms_products?.name}</b> ({delRow.stock} units in stock,
+              ₵{(delRow.stock * Number(delRow.ms_products?.cost ?? 0)).toFixed(2)} at cost). It will disappear from the POS and inventory,
+              and this removal will be saved in the Removal Log. Past sales are kept.
+            </div>
+            <Field label="Reason *">
+              <select className="input-field" value={delReason} onChange={e => setDelReason(e.target.value)}>
+                <option value="">Select a reason…</option>
+                {REMOVAL_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </Field>
+            <Field label={delReason === 'Other' ? 'Describe the reason *' : 'Note (optional)'}>
+              <input className="input-field" value={delNote} onChange={e => setDelNote(e.target.value)} placeholder="e.g. supplier credit note #123" />
+            </Field>
+            {formError && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>{formError}</div>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+              <Btn variant="ghost" onClick={closeDelete}>Cancel</Btn>
+              <Btn variant="danger" onClick={handleDelete} disabled={saving || !delReason}>{saving ? 'Removing…' : 'Remove Product'}</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showLog && (
+        <Modal title="Removal Log" onClose={() => setShowLog(false)}>
+          {removals.length === 0 ? (
+            <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: 20 }}>No products removed yet.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                Total value removed (at cost): <b style={{ color: '#e8ecf4' }}>₵{removals.reduce((a, r) => a + Number(r.loss_value), 0).toFixed(2)}</b>
+              </div>
+              {removals.map(r => (
+                <div key={r.id} style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 13, color: '#e8ecf4', fontWeight: 600 }}>
+                    <span>{r.product_name} <span style={{ color: '#6b7280', fontWeight: 400, fontSize: 11 }}>{r.sku}</span></span>
+                    <span>{r.quantity} units · ₵{Number(r.loss_value).toFixed(2)}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                    {r.reason}{r.note ? ` — ${r.note}` : ''} · {new Date(r.removed_at).toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Modal>
       )}
     </div>
@@ -913,7 +1064,7 @@ function Reports({ refresh }: { refresh: number }) {
   const productMap: Record<string, { name: string; revenue: number; qty: number; category: string }> = {}
   ;(filtered as TxnWithItems[]).forEach(t => {
     t.ms_transaction_items?.forEach(item => {
-      const name = item.ms_products?.name ?? 'Unknown'
+      const name = item.ms_products?.name ?? 'Removed product'
       if (!productMap[name]) productMap[name] = { name, revenue: 0, qty: 0, category: item.ms_products?.category ?? '' }
       productMap[name].revenue += Number(item.unit_price) * item.quantity
       productMap[name].qty += item.quantity
