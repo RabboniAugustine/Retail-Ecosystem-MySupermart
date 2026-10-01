@@ -6,14 +6,12 @@ export const supabase = createClient(
   publicAnonKey
 )
 
-const EDGE = `https://${projectId}.supabase.co/functions/v1/make-server-329466e6`
-
-export async function checkout(body: object): Promise<unknown> {
-  const res = await fetch(`${EDGE}/checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+export async function checkout(body: { txn: object; items: object[]; customer_id: number | null }): Promise<unknown> {
+  const { data, error } = await supabase.rpc('ms_checkout', {
+    p_txn: body.txn,
+    p_items: body.items,
+    p_customer_id: body.customer_id,
   })
-  if (!res.ok) throw new Error(await res.text())
-  return res.json()
+  if (error) throw new Error(error.message)
+  return data
 }
