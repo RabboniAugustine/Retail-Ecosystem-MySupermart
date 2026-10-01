@@ -317,6 +317,7 @@ function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
   const [customerId, setCustomerId] = useState<number | null>(null)
   const [status, setStatus] = useState<'idle' | 'processing' | 'done'>('idle')
   const [activeCategory, setActiveCategory] = useState('All')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     Promise.allSettled([
@@ -350,6 +351,7 @@ function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
   const handleCheckout = async () => {
     if (!cart.length || status !== 'idle') return
     setStatus('processing')
+    setErrorMsg('')
     try {
       await checkout({
         txn: {
@@ -373,7 +375,10 @@ function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
         supabase.from('ms_products').select('*, ms_inventory(stock, reorder_level)').order('name')
           .then(({ data }) => { if (data) setProducts(data as typeof products) })
       }, 1800)
-    } catch { setStatus('idle') }
+     } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Checkout failed')
+      setStatus('idle')
+   }
   }
 
   if (loading) return <Spinner />
@@ -481,6 +486,11 @@ function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
             ))}
           </div>
 
+          {errorMsg && (
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
+              Checkout failed: {errorMsg}
+            </div>
+          )}
           <button onClick={handleCheckout} disabled={!cart.length || status !== 'idle'}
             style={{ background: status === 'done' ? 'rgba(0,212,106,0.2)' : !cart.length ? 'rgba(255,255,255,0.04)' : '#00d46a', color: status === 'done' ? '#00d46a' : !cart.length ? '#4b5563' : '#03120a', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 14, fontWeight: 700, cursor: (!cart.length || status !== 'idle') ? 'default' : 'pointer', transition: 'all 0.18s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {status === 'done' ? <><Icon d={ICONS.check} size={15} /> Recorded!</>
