@@ -4,21 +4,29 @@ A web-based retail management system for a supermarket: point of sale, inventory
 
 **Live demo (test mode):** https://retail-ecosystem-my-supermart.vercel.app
 
-> **Status:** early-stage, in test mode. There is no login yet, so do not use it with real business data until authentication and access rules are added (see [Security notes](#security-notes)).
+> **Status:** test mode. Logins and role-based access are now in place; run the database migrations below before use.
 
-## Features
+## Three screens
 
-| Module | What it does |
-| --- | --- |
-| **Dashboard** | Sales, stock and customer overview with charts |
-| **Point of Sale** | Search or filter products, build a cart, apply a discount, choose a payment method, attach a customer and charge. Stock, loyalty points and receipts update in one database transaction |
-| **Inventory** | Add, edit and remove products (cost and selling price, quantity, reorder level, expiry date, supplier). Removing a product requires a reason (returned to supplier, expired, damaged, etc.) and is saved in a **Removal Log** |
-| **Customers** | Customer records with total spent, visits, loyalty points and tiers (Bronze, Silver, Gold, Platinum) |
-| **Suppliers** | Supplier contacts, ratings and amounts payable |
-| **Accounting** | Log and review expenses alongside sales |
-| **Reports** | Revenue trends, top products and sales by category |
+| Screen | Who | What they can do |
+| --- | --- | --- |
+| **Owner dashboard** | Shop owner(s) | Everything: today's sales and profit, sales per salesperson, POS, Sales & Refunds (filter, reprint, refund, export CSV), Inventory (with Stock log and Removal log), Accounting, Reports, Customers, Suppliers, Staff (approve / disable salespeople) and Settings (VAT, max discount, receipt details) |
+| **Salesperson dashboard** | Till staff | My Shift (my sales today, cash to hand in), Point of Sale, Stock (add / edit products, receive or count stock), Customers. No costs, profit, accounting or reports. Discount is capped by the owner's limit |
+| **Customer display** | Shoppers | A second screen facing the customer. Shows each item as it is scanned, the total, change due and loyalty points, then a thank-you screen |
 
-It is also a **PWA**: it can be installed on a phone or desktop from the browser and opens full-screen with its own icon.
+### Setting up the customer display (two screens, one computer)
+
+1. Sign in on the till and open **Point of Sale**.
+2. Click **Customer screen**. A new window opens.
+3. Drag that window onto the second monitor and **double-click it** (or press F11) for full screen.
+
+The two windows talk to each other directly inside the browser, so the display updates instantly and works even if the internet drops. Keep both windows in the same browser.
+
+### Roles and logins
+
+- The **first account created becomes the Owner**.
+- Salespeople open the app, choose **Create account**, then the owner approves them in **Staff**.
+- The owner can disable a salesperson at any time; they lose access immediately.
 
 ## Tech stack
 
@@ -32,14 +40,15 @@ It is also a **PWA**: it can be installed on a phone or desktop from the browser
 ├── index.html                  # App shell, PWA and icon metadata
 ├── public/                     # Favicon, app icons, manifest, service worker
 ├── src/
-│   ├── App.tsx                 # All screens (Dashboard, POS, Inventory, ...)
-│   ├── lib/api.ts              # Supabase client and checkout call
+│   ├── App.tsx                 # Login gate and the Owner / Salesperson layouts
+│   ├── pages/                  # Dashboard, POS, Inventory, SalesHistory, Staff, Settings,
+│   │                           # SalesHome (My Shift), CustomerDisplay, ...
+│   ├── components/             # Shared UI, sidebar shell, receipt, sale detail
+│   ├── lib/                    # Supabase client + database calls, auth, display link, types
 │   └── main.tsx
 ├── supabase/
-│   ├── schema.sql              # Tables, indexes and access rules
-│   ├── checkout.sql            # ms_checkout(): atomic sale function
-│   ├── product_removal.sql     # Removal log and ms_remove_product()
-│   └── functions/server/       # Original edge function (no longer used by checkout)
+│   ├── migrations/             # Run these in order in the Supabase SQL Editor
+│   └── functions/server/       # Original edge function (not used)
 └── utils/supabase/info.tsx     # Supabase project URL and public (anon) key
 ```
 
@@ -61,15 +70,22 @@ pnpm dev
 
 Edit `utils/supabase/info.tsx` with your project ID and **anon (public)** key, found in Supabase under **Project Settings → API**. Never put the `service_role` key in this repository.
 
-### 3. Create the database
+### 3. Create / upgrade the database
 
-In the Supabase **SQL Editor**, run these files **in this order**:
+In the Supabase **SQL Editor**, open each file, paste it and click **Run**, **in this order**:
 
-1. `supabase/schema.sql`
-2. `supabase/checkout.sql`
-3. `supabase/product_removal.sql`
+1. `supabase/migrations/001_base_schema.sql` — tables (creates them, or adds missing columns to existing ones)
+2. `supabase/migrations/002_roles_and_security.sql` — logins, roles, settings and access rules
+3. `supabase/migrations/003_pos_functions.sql` — checkout, refunds, stock changes
 
-The tables start empty. Add products, customers, suppliers and expenses from inside the app.
+All three are safe to run again. Existing products, customers and sales are kept.
+
+Then in Supabase **Authentication**:
+
+- **URL Configuration → Site URL**: set it to your live address (e.g. `https://retail-ecosystem-my-supermart.vercel.app`) so confirmation emails link back to the app.
+- **Sign In / Providers → Email → Confirm email**: leave on (staff confirm by email before signing in) or turn off so new staff can sign in straight away. Either way the owner still has to approve them.
+
+Finally, open the app and **create the owner account first**.
 
 ### 4. Build for production
 
@@ -81,20 +97,23 @@ Deploy to Vercel by importing the repository and keeping the default Vite settin
 
 ## How a sale works
 
-The POS calls the database function `ms_checkout`. In a single transaction it records the sale, saves each line item, reduces stock (never below zero) and, if a customer is attached, adds loyalty points (1 point per ₵1) and updates their tier by lifetime spend. If anything fails, nothing is saved.
+The POS calls the database function `ms_checkout`. Prices, discount, VAT and the total are calculated **in the database** from the product prices, so they cannot be changed from the browser. In one transaction it records the sale and the salesperson, saves each line (with the cost at the time, for profit reports), reduces stock, blocks the sale if stock is short (optional setting), checks the salesperson's discount limit and, if a customer is attached, adds loyalty points (1 point per ₵1) and updates their tier. If anything fails, nothing is saved.
 
-## Security notes
+Every other stock change (deliveries, stock counts, refunds, removals) goes through `ms_adjust_stock`, `ms_refund` or `ms_remove_product` and is written to the **Stock log** with who did it and why.
 
-- The anon key in `utils/supabase/info.tsx` is designed to be public, but **the current Row Level Security policies allow anyone with the site link to read and write every table**. This is intentional for testing only.
-- Before real use: add Supabase Auth (login), replace the `test_mode_all` policies with role-based ones (admin, manager, cashier) and restrict who can edit prices or remove products.
+## Security
+
+- Logged-out visitors cannot read or change anything.
+- Salespeople only see their own sales and cannot see expenses, supplier balances, the stock and removal logs or other staff.
+- Only the owner can refund sales, remove products, change settings and manage staff.
+- The anon key in `utils/supabase/info.tsx` is designed to be public. Never put the `service_role` key in this repository.
 
 ## Roadmap
 
-- [ ] Login and user roles
-- [ ] Block sales when stock is insufficient (optional setting)
-- [ ] Edit and delete for customers and suppliers
-- [ ] Count expired or damaged stock as an expense in Accounting
+- [ ] Redeem loyalty points at the till
 - [ ] Offline sales
+- [ ] Purchase orders to suppliers
+- [ ] Count expired or damaged stock as an expense in Accounting
 
 ## License
 

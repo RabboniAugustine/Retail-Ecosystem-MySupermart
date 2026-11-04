@@ -182,3 +182,50 @@ body {
   border-color: rgba(0,212,106,0.5);
 }
 .input-field::placeholder { color: var(--muted-foreground); }
+
+/* ── Layout helpers (collapse on small screens) ─────────────────────────── */
+.g2, .g3, .g4, .g-split, .g-split-r { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g-split { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+.g-split-r { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+.table-wrap { overflow-x: auto; }
+.table-wrap table { width: 100%; border-collapse: collapse; }
+
+@media (max-width: 1100px) {
+  .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-split, .g-split-r { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .g2, .g3, .g4 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* POS: products + order side by side, stacked on narrow screens */
+.pos-grid { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 16px; height: calc(100vh - 96px); }
+.pos-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; overflow-y: auto; padding-right: 2px; align-content: start; }
+@media (max-width: 900px) {
+  .pos-grid { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .pos-products { max-height: 50vh; }
+}
+
+/* Sidebar becomes a slide-in drawer on phones */
+.shell-sidebar { transition: width 0.18s ease, transform 0.18s ease; }
+.shell-menu-btn { display: none; }
+@media (max-width: 760px) {
+  .shell-sidebar { position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; width: 230px !important; transform: translateX(-100%); }
+  .shell-sidebar.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+  .shell-menu-btn { display: flex; }
+  .shell-collapse { display: none; }
+  .shell-content { padding: 14px !important; }
+}
+
+/* Receipt printing: only the receipt is printed */
+.receipt-print { display: none; }
+@media print {
+  @page { size: 80mm auto; margin: 4mm; }
+  body * { visibility: hidden !important; }
+  .receipt-print, .receipt-print * { visibility: visible !important; }
+  .receipt-print { display: block !important; position: absolute; left: 0; top: 0; width: 72mm; color: #000; background: #fff; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  html, body, #root { background: #fff !important; height: auto; }
+}
