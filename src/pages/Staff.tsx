@@ -82,7 +82,7 @@ export function Staff({ refresh }: { refresh: number }) {
       <div className="stat-card">
         <SectionTitle>All staff</SectionTitle>
         <ErrorBox>{error}</ErrorBox>
-        {staff.length === 0 ? <EmptyState icon="🧑‍💼" title="No staff yet" /> : (
+        {staff.length === 0 ? <EmptyState title="No staff yet" /> : (
           <div className="table-wrap">
             <table>
               <thead><tr><Th>Name</Th><Th>Email</Th><Th>Role</Th><Th right>Sales today</Th><Th>Joined</Th><Th>Actions</Th></tr></thead>

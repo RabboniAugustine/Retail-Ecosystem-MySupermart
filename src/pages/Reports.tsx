@@ -79,7 +79,7 @@ export function Reports({ refresh }: { refresh: number }) {
       <div className="stat-card">
         <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 16px' }}>Daily Revenue</h3>
         {dailyData.length === 0 ? (
-          <EmptyState icon="📈" title="No sales in this period" />
+          <EmptyState title="No sales in this period" />
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={dailyData}>
@@ -103,7 +103,7 @@ export function Reports({ refresh }: { refresh: number }) {
         <div className="stat-card">
           <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 14px' }}>Top Products by Revenue</h3>
           {topProducts.length === 0 ? (
-            <EmptyState icon="🏆" title="No product data yet" />
+            <EmptyState title="No product data yet" />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {topProducts.map((p, i) => {
@@ -131,7 +131,7 @@ export function Reports({ refresh }: { refresh: number }) {
         <div className="stat-card">
           <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 14px' }}>Revenue by Category</h3>
           {catData.length === 0 ? (
-            <EmptyState icon="🍰" title="No category data yet" />
+            <EmptyState title="No category data yet" />
           ) : (
             <>
               <ResponsiveContainer width="100%" height={150}>
@@ -174,7 +174,7 @@ export function Reports({ refresh }: { refresh: number }) {
           ))}
           {inventory.filter(r => r.stock <= r.reorder_level).length === 0 && (
             <div style={{ gridColumn: '1/-1' }}>
-              <EmptyState icon="✅" title="All inventory levels are healthy" />
+              <EmptyState title="All inventory levels are healthy" />
             </div>
           )}
         </div>

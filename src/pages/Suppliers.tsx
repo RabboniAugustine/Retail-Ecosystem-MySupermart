@@ -69,7 +69,7 @@ export function Suppliers({ refresh }: { refresh: number }) {
           <Btn onClick={() => { setForm(BLANK); setError(''); setEditing('new') }}><Icon d={ICONS.plus} size={14} /> Add supplier</Btn>
         </div>
         {suppliers.length === 0 ? (
-          <EmptyState icon="🚚" title="No suppliers yet" sub="Add your suppliers to track contacts and amounts owed" />
+          <EmptyState title="No suppliers yet" sub="Add your suppliers to track contacts and amounts owed" />
         ) : (
           <div className="table-wrap">
             <table>
@@ -81,7 +81,7 @@ export function Suppliers({ refresh }: { refresh: number }) {
                     <Td>{s.contact_name || '—'}</Td>
                     <Td mono>{s.phone || '—'}</Td>
                     <Td>{s.category ? <span className="badge badge-blue">{s.category}</span> : '—'}</Td>
-                    <Td style={{ color: '#f59e0b', fontWeight: 600 }}>{'★'.repeat(Math.round(Number(s.rating)))} {Number(s.rating)}</Td>
+                    <Td style={{ color: '#f59e0b', fontWeight: 600 }}>{Number(s.rating).toFixed(1)} / 5</Td>
                     <Td mono strong right style={{ color: Number(s.payable) > 0 ? '#ef4444' : '#00d46a' }}>{Number(s.payable) > 0 ? cedi(s.payable) : 'Cleared'}</Td>
                     <Td><button onClick={() => openEdit(s)} title="Edit" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button></Td>
                   </tr>

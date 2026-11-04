@@ -88,7 +88,7 @@ export function Accounting({ refresh }: { refresh: number }) {
         <div className="stat-card">
           <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 16px' }}>Monthly Revenue</h3>
           {monthlyRevenue.length === 0 ? (
-            <EmptyState icon="📊" title="No sales data yet" sub="Revenue chart appears after first sales" />
+            <EmptyState title="No sales data yet" sub="Revenue chart appears after first sales" />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={monthlyRevenue}>
@@ -105,7 +105,7 @@ export function Accounting({ refresh }: { refresh: number }) {
         <div className="stat-card">
           <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 16px' }}>Expenses by Category</h3>
           {expByCategory.length === 0 ? (
-            <EmptyState icon="💸" title="No expenses logged" />
+            <EmptyState title="No expenses logged" />
           ) : (
             <>
               <ResponsiveContainer width="100%" height={130}>
@@ -138,7 +138,7 @@ export function Accounting({ refresh }: { refresh: number }) {
           <Btn onClick={() => setShowAdd(true)}><Icon d={ICONS.plus} size={14} /> Log Expense</Btn>
         </div>
         {expenses.length === 0 ? (
-          <EmptyState icon="📋" title="No expenses logged" sub="Record expenses to track profit accurately"
+          <EmptyState title="No expenses logged" sub="Record expenses to track profit accurately"
             action={<Btn onClick={() => setShowAdd(true)}><Icon d={ICONS.plus} size={14} /> Log Expense</Btn>} />
         ) : (
           <div className="table-wrap"><table>

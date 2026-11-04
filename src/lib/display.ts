@@ -2,7 +2,7 @@
 // Both windows run in the same browser on the same computer, so they talk
 // through a BroadcastChannel: instant, no internet needed, nothing stored online.
 
-export type DisplayLine = { name: string; qty: number; price: number }
+export type DisplayLine = { id?: number; name: string; sku?: string | null; category?: string; qty: number; price: number }
 
 export type DisplayState =
   | { mode: 'idle'; shopName: string; message: string }

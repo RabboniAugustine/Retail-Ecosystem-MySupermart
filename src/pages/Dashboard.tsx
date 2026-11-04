@@ -100,7 +100,7 @@ export function Dashboard({ refresh }: { refresh: number }) {
 
             <div className="stat-card">
               <SectionTitle>Today by salesperson</SectionTitle>
-              {byStaff.length === 0 ? <EmptyState icon="🧑‍💼" title="No sales yet today" /> : (
+              {byStaff.length === 0 ? <EmptyState title="No sales yet today" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {byStaff.map(s => (
                     <div key={s.name}>
@@ -127,7 +127,7 @@ export function Dashboard({ refresh }: { refresh: number }) {
           <div className="g-split">
             <div className="stat-card">
               <SectionTitle right={<span style={{ fontSize: 12, color: '#4b5563' }}>Last 10</span>}>Recent sales</SectionTitle>
-              {txns.length === 0 ? <EmptyState icon="🧾" title="No sales yet" sub="Complete your first sale in Point of Sale" /> : (
+              {txns.length === 0 ? <EmptyState title="No sales yet" sub="Complete your first sale in Point of Sale" /> : (
                 <div className="table-wrap">
                   <table>
                     <thead><tr><Th>Sale</Th><Th>Customer</Th><Th>By</Th><Th>Payment</Th><Th right>Total</Th><Th>Time</Th><Th>Status</Th></tr></thead>
@@ -150,7 +150,7 @@ export function Dashboard({ refresh }: { refresh: number }) {
             </div>
             <div className="stat-card">
               <SectionTitle>Stock alerts</SectionTitle>
-              {alerts.length === 0 ? <EmptyState icon="✅" title="All stock levels healthy" /> : (
+              {alerts.length === 0 ? <EmptyState title="All stock levels healthy" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   {alerts.slice(0, 8).map(r => (
                     <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: r.stock <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)', border: `1px solid ${r.stock <= 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}` }}>

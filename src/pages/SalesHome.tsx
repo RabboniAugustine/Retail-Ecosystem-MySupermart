@@ -57,7 +57,7 @@ export function SalesHome({ refresh, onStartSelling }: { refresh: number; onStar
           <div className="g-split">
             <div className="stat-card">
               <SectionTitle>My sales today</SectionTitle>
-              {txns.length === 0 ? <EmptyState icon="🧾" title="No sales yet today" sub="Your sales will show here" /> : (
+              {txns.length === 0 ? <EmptyState title="No sales yet today" sub="Your sales will show here" /> : (
                 <div className="table-wrap">
                   <table>
                     <thead><tr><Th>Time</Th><Th>Sale</Th><Th>Customer</Th><Th>Payment</Th><Th right>Total</Th><Th>Status</Th></tr></thead>
@@ -79,7 +79,7 @@ export function SalesHome({ refresh, onStartSelling }: { refresh: number; onStar
             </div>
             <div className="stat-card">
               <SectionTitle>Running low</SectionTitle>
-              {alerts.length === 0 ? <EmptyState icon="✅" title="Stock looks good" /> : (
+              {alerts.length === 0 ? <EmptyState title="Stock looks good" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   {alerts.slice(0, 10).map(r => (
                     <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: r.stock <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)' }}>

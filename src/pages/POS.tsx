@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 import { cedi } from '../lib/format'
 import { createDisplaySender, openCustomerDisplay, type DisplayState } from '../lib/display'
 import type { Customer, Product } from '../lib/types'
-import { Btn, CATEGORY_EMOJI, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner } from '../components/ui'
+import { Btn, CATEGORY_COLORS, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner } from '../components/ui'
 import { Receipt, type ReceiptData } from '../components/Receipt'
 
 type PosProduct = Product & { ms_inventory: { stock: number; reorder_level: number }[] | { stock: number; reorder_level: number } | null }
@@ -73,7 +73,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
       ? { mode: 'idle', shopName: settings.shop_name, message: settings.display_message }
       : {
           mode: 'cart', shopName: settings.shop_name,
-          lines: cart.map(l => ({ name: l.product.name, qty: l.qty, price: Number(l.product.price) })),
+          lines: cart.map(l => ({ id: l.product.id, name: l.product.name, sku: l.product.sku, category: l.product.category, qty: l.qty, price: Number(l.product.price) })),
           subtotal, discountPct: discount, discount: discountAmt, vatRate, tax, total,
           customerName: customer?.name ?? null, customerPoints: customer?.points ?? null,
           paymentMethod: payMethod, tendered: payMethod === 'Cash' ? tenderedNum : null,
@@ -202,7 +202,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
           ))}
         </div>
         {filtered.length === 0 ? (
-          <EmptyState icon="📦" title="No products found" sub={products.length ? 'Try another search' : 'Add products in Stock / Inventory'} />
+          <EmptyState title="No products found" sub={products.length ? 'Try another search' : 'Add products in Stock / Inventory'} />
         ) : (
           <div className="pos-products">
             {filtered.map(p => {
@@ -213,8 +213,9 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
                   style={{ textAlign: 'left', background: '#0d1120', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: 12, cursor: out ? 'not-allowed' : 'pointer', opacity: out ? 0.45 : 1, color: 'inherit', font: 'inherit' }}
                   onMouseEnter={e => { if (!out) e.currentTarget.style.borderColor = 'rgba(0,212,106,0.35)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}>
-                  <div style={{ height: 36, background: 'rgba(255,255,255,0.03)', borderRadius: 6, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                    {CATEGORY_EMOJI[p.category] ?? CATEGORY_EMOJI.Default}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 1, background: CATEGORY_COLORS[p.category] ?? CATEGORY_COLORS.Default }} />
+                    {p.category}
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#e8ecf4', marginBottom: 3, lineHeight: 1.3, minHeight: 31 }}>{p.name}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -243,7 +244,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', minHeight: 80 }}>
           {cart.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '30px 0', color: '#4b5563', fontSize: 13 }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🛒</div>Scan or tap a product to add
+              Scan or tap a product to add
             </div>
           ) : cart.map(l => (
             <div key={l.product.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>

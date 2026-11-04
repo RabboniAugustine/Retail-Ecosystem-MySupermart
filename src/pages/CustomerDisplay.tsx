@@ -1,95 +1,207 @@
 import { useEffect, useRef, useState } from 'react'
-import { listenToDisplay, type DisplayState } from '../lib/display'
+import { listenToDisplay, type DisplayLine, type DisplayState } from '../lib/display'
 import { cedi } from '../lib/format'
 
 /**
  * Customer-facing screen. Opened from the POS ("Customer screen" button) and
- * dragged onto the second monitor. Press F11 for full screen.
- * It only shows what the POS window sends; it has no login and reads no data.
+ * dragged onto the second monitor; double-click for full screen.
+ * It shows exactly what the POS window sends, live, and reads no data itself.
  */
+
+const C = {
+  bg: '#06080f', panel: '#0b0f1a', line: 'rgba(255,255,255,0.07)',
+  text: '#e8ecf4', soft: '#9ca3af', faint: '#6b7280', green: '#00d46a',
+}
+const mono = 'JetBrains Mono, monospace'
+const lineKey = (l: DisplayLine, i: number) => (l.id != null ? `p${l.id}` : `${l.name}#${i}`)
+
 export function CustomerDisplay() {
-  const [state, setState] = useState<DisplayState>({ mode: 'idle', shopName: 'My Supermart', message: 'Welcome!' })
+  const [state, setState] = useState<DisplayState>({ mode: 'idle', shopName: 'My Supermart', message: 'Welcome' })
+  const [lastKey, setLastKey] = useState<string | null>(null)
   const [now, setNow] = useState(new Date())
+  const prevQty = useRef<Map<string, number>>(new Map())
   const listRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => listenToDisplay(setState), [])
+  useEffect(() => listenToDisplay(next => {
+    // Work out which line was just added or changed, to highlight it.
+    if (next.mode === 'cart') {
+      let changed: string | null = null
+      const map = new Map<string, number>()
+      next.lines.forEach((l, i) => {
+        const k = lineKey(l, i)
+        map.set(k, l.qty)
+        if (prevQty.current.get(k) !== l.qty) changed = k
+      })
+      if (changed) setLastKey(changed)
+      prevQty.current = map
+    } else {
+      prevQty.current = new Map()
+      setLastKey(null)
+    }
+    setState(next)
+  }), [])
+
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(t) }, [])
-  useEffect(() => { document.title = `${state.shopName} — Customer Display` }, [state.shopName])
-  // Newest item stays in view.
-  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }) }, [state])
+  useEffect(() => { document.title = `${state.shopName} · Customer display` }, [state.shopName])
+
+  // Keep the highlighted line in view.
+  useEffect(() => {
+    listRef.current?.querySelector('[data-last="true"]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [state, lastKey])
 
   const goFullscreen = () => { document.documentElement.requestFullscreen?.().catch(() => {}) }
 
   return (
-    <div onDoubleClick={goFullscreen} style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'radial-gradient(circle at 80% 0%, rgba(0,212,106,0.10), transparent 45%), #06080f', color: '#e8ecf4', overflow: 'hidden', cursor: 'default' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2.2vh 3vw', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <div onDoubleClick={goFullscreen} style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: C.bg, color: C.text, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2.4vh 3vw', borderBottom: `1px solid ${C.line}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
-          <div style={{ width: '5vh', height: '5vh', borderRadius: '1.2vh', background: 'linear-gradient(135deg, #00d46a, #009f50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6vh', fontWeight: 800, color: '#03120a', fontFamily: 'Roboto Slab, serif' }}>
-            {state.shopName.charAt(0).toUpperCase()}
-          </div>
-          <div style={{ fontSize: '3.2vh', fontWeight: 700, fontFamily: 'Roboto Slab, serif' }}>{state.shopName}</div>
+          <span style={{ width: '1.2vh', height: '1.2vh', background: C.green, borderRadius: 2 }} />
+          <span style={{ fontSize: '3vh', fontWeight: 700, fontFamily: 'Roboto Slab, serif', letterSpacing: '-0.01em' }}>{state.shopName}</span>
         </div>
-        <div style={{ fontSize: '2.6vh', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
+        <span style={{ fontSize: '2.4vh', color: C.faint, fontFamily: mono }}>
           {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-        </div>
+        </span>
       </header>
 
-      {state.mode === 'idle' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '0 6vw', textAlign: 'center' }}>
-          <div style={{ fontSize: '12vh' }}>🛒</div>
-          <div style={{ fontSize: '6vh', fontWeight: 800, fontFamily: 'Roboto Slab, serif', lineHeight: 1.15 }}>{state.message}</div>
-          <div style={{ fontSize: '2.4vh', color: '#6b7280' }}>Ask about our loyalty points — earn 1 point for every ₵1 you spend.</div>
-        </div>
-      )}
+      {state.mode === 'idle' && <Idle message={state.message} />}
+      {state.mode === 'cart' && <Cart state={state} lastKey={lastKey} listRef={listRef} />}
+      {state.mode === 'paid' && <Paid state={state} />}
+    </div>
+  )
+}
 
-      {state.mode === 'cart' && (
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', minHeight: 0 }}>
-          <div ref={listRef} style={{ overflowY: 'auto', padding: '2vh 3vw' }}>
-            {state.lines.map((l, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '1.5vw', padding: '1.6vh 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '2.8vh' }}>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#00d46a', minWidth: '3.5em' }}>{l.qty}×</span>
-                <span style={{ flex: 1, fontWeight: 600 }}>{l.name}<span style={{ display: 'block', fontSize: '2vh', color: '#6b7280', fontWeight: 400 }}>{cedi(l.price)} each</span></span>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{cedi(l.qty * l.price)}</span>
+function Idle({ message }: { message: string }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '0 8vw', textAlign: 'center' }}>
+      <div style={{ fontSize: '6vh', fontWeight: 700, fontFamily: 'Roboto Slab, serif', lineHeight: 1.2, maxWidth: '22ch' }}>{message}</div>
+      <div style={{ width: '6vw', height: 2, background: C.green }} />
+      <div style={{ fontSize: '2.4vh', color: C.faint }}>Your items and prices will appear here as they are scanned.</div>
+    </div>
+  )
+}
+
+function Cart({ state, lastKey, listRef }: {
+  state: Extract<DisplayState, { mode: 'cart' }>
+  lastKey: string | null
+  listRef: React.RefObject<HTMLDivElement | null>
+}) {
+  const units = state.lines.reduce((s, l) => s + l.qty, 0)
+  const lastIndex = state.lines.findIndex((l, i) => lineKey(l, i) === lastKey)
+  const last = lastIndex >= 0 ? state.lines[lastIndex] : state.lines[state.lines.length - 1]
+  const cols = 'minmax(0, 1fr) 7vw 12vw 13vw'
+  const head: React.CSSProperties = { fontSize: '1.6vh', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }
+
+  return (
+    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(0, 1.65fr) minmax(0, 1fr)', minHeight: 0 }}>
+      {/* ── Itemised list ── */}
+      <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: '2.5vh 0 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: cols, gap: '1.5vw', padding: '0 3vw 1.5vh', borderBottom: `1px solid ${C.line}` }}>
+          <span style={head}>Item</span>
+          <span style={{ ...head, textAlign: 'right' }}>Qty</span>
+          <span style={{ ...head, textAlign: 'right' }}>Unit price</span>
+          <span style={{ ...head, textAlign: 'right' }}>Amount</span>
+        </div>
+        <div ref={listRef} style={{ flex: 1, overflowY: 'auto' }}>
+          {state.lines.map((l, i) => {
+            const isLast = lineKey(l, i) === lastKey
+            return (
+              <div key={lineKey(l, i)} data-last={isLast}
+                style={{
+                  display: 'grid', gridTemplateColumns: cols, gap: '1.5vw', alignItems: 'center',
+                  padding: '1.7vh 3vw', borderBottom: `1px solid ${C.line}`,
+                  background: isLast ? 'rgba(0,212,106,0.06)' : 'transparent',
+                  boxShadow: isLast ? `inset 4px 0 0 ${C.green}` : 'none',
+                  transition: 'background 0.3s',
+                }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '2.8vh', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                  {l.category && <div style={{ fontSize: '1.8vh', color: C.faint, marginTop: 2 }}>{l.category}</div>}
+                </div>
+                <span style={{ fontSize: '2.8vh', fontFamily: mono, textAlign: 'right', color: isLast ? C.green : C.text }}>{l.qty}</span>
+                <span style={{ fontSize: '2.4vh', fontFamily: mono, textAlign: 'right', color: C.soft }}>{cedi(l.price)}</span>
+                <span style={{ fontSize: '2.8vh', fontFamily: mono, textAlign: 'right', fontWeight: 700 }}>{cedi(l.qty * l.price)}</span>
               </div>
-            ))}
-          </div>
-          <aside style={{ background: '#0d1120', borderLeft: '1px solid rgba(255,255,255,0.06)', padding: '4vh 3vw', display: 'flex', flexDirection: 'column', gap: '2vh', justifyContent: 'flex-end' }}>
-            {state.customerName && (
-              <div style={{ padding: '1.8vh 1.5vw', borderRadius: '1.2vh', background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,0.3)', fontSize: '2.3vh' }}>
-                Hello, <b>{state.customerName}</b>
-                {state.customerPoints != null && <div style={{ color: '#c084fc', marginTop: 4 }}>{state.customerPoints.toLocaleString()} loyalty points · +{Math.floor(state.total)} with this purchase</div>}
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '2.6vh', color: '#9ca3af' }}><span>Subtotal</span><span>{cedi(state.subtotal)}</span></div>
-            {state.discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '2.6vh', color: '#00d46a' }}><span>Discount ({state.discountPct}%)</span><span>−{cedi(state.discount)}</span></div>}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '2.6vh', color: '#9ca3af' }}><span>VAT ({state.vatRate}%)</span><span>{cedi(state.tax)}</span></div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2vh' }}>
-              <div style={{ fontSize: '2.6vh', color: '#9ca3af' }}>Total to pay</div>
-              <div style={{ fontSize: '9vh', fontWeight: 800, fontFamily: 'Roboto Slab, serif', color: '#00d46a', lineHeight: 1.1 }}>{cedi(state.total)}</div>
-              <div style={{ fontSize: '2.2vh', color: '#6b7280', marginTop: '1vh' }}>
-                {state.paymentMethod}{state.tendered != null && state.tendered > 0 ? ` · Cash ${cedi(state.tendered)} · Change ${cedi(Math.max(0, state.tendered - state.total))}` : ''}
-              </div>
+            )
+          })}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.8vh 3vw', borderTop: `1px solid ${C.line}`, fontSize: '2.2vh', color: C.soft }}>
+          <span>{state.lines.length} {state.lines.length === 1 ? 'item' : 'items'} · {units} {units === 1 ? 'unit' : 'units'}</span>
+          <span style={{ fontFamily: mono }}>{cedi(state.subtotal)}</span>
+        </div>
+      </section>
+
+      {/* ── Summary ── */}
+      <aside style={{ background: C.panel, borderLeft: `1px solid ${C.line}`, padding: '3.5vh 3vw', display: 'flex', flexDirection: 'column', gap: '2.2vh' }}>
+        {last && (
+          <div>
+            <div style={{ ...head, marginBottom: '1vh' }}>Just added</div>
+            <div style={{ fontSize: '3.2vh', fontWeight: 700, lineHeight: 1.2 }}>{last.name}</div>
+            <div style={{ fontSize: '2.4vh', color: C.soft, fontFamily: mono, marginTop: '0.6vh' }}>
+              {last.qty} × {cedi(last.price)} = <span style={{ color: C.text }}>{cedi(last.qty * last.price)}</span>
             </div>
-          </aside>
+          </div>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        {state.customerName && (
+          <div style={{ fontSize: '2.2vh', color: C.soft, paddingBottom: '2vh', borderBottom: `1px solid ${C.line}` }}>
+            <span style={{ color: C.text, fontWeight: 600 }}>{state.customerName}</span>
+            {state.customerPoints != null && <> · {state.customerPoints.toLocaleString()} points, +{Math.floor(state.total)} today</>}
+          </div>
+        )}
+
+        <Row label="Subtotal" value={cedi(state.subtotal)} />
+        {state.discount > 0 && <Row label={`Discount (${state.discountPct}%)`} value={`−${cedi(state.discount)}`} color={C.green} />}
+        <Row label={`VAT (${state.vatRate}%)`} value={cedi(state.tax)} />
+
+        <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: '2.2vh' }}>
+          <div style={{ fontSize: '2.2vh', color: C.soft }}>Total to pay</div>
+          <div style={{ fontSize: '9vh', fontWeight: 800, fontFamily: 'Roboto Slab, serif', color: C.green, lineHeight: 1.05, letterSpacing: '-0.02em' }}>{cedi(state.total)}</div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1vh', fontSize: '2.2vh', color: C.soft }}>
+          <Row label="Payment" value={state.paymentMethod} small />
+          {state.tendered != null && state.tendered > 0 && (
+            <>
+              <Row label="Cash received" value={cedi(state.tendered)} small />
+              <Row label="Change" value={cedi(Math.max(0, state.tendered - state.total))} small color={C.text} />
+            </>
+          )}
+        </div>
+      </aside>
+    </div>
+  )
+}
+
+function Row({ label, value, color, small }: { label: string; value: string; color?: string; small?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: small ? '2.2vh' : '2.6vh', color: color ?? C.soft }}>
+      <span>{label}</span><span style={{ fontFamily: mono }}>{value}</span>
+    </div>
+  )
+}
+
+function Paid({ state }: { state: Extract<DisplayState, { mode: 'paid' }> }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2.4vh', textAlign: 'center', padding: '0 6vw' }}>
+      <svg width="11vh" height="11vh" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" stroke={C.green} strokeWidth="2" />
+        <path d="M14 24.5l7 7 13-14" stroke={C.green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <div style={{ fontSize: '5.5vh', fontWeight: 700, fontFamily: 'Roboto Slab, serif' }}>
+        Thank you{state.customerName ? `, ${state.customerName.split(' ')[0]}` : ''}
+      </div>
+      <div style={{ fontSize: '2.8vh', color: C.soft }}>Paid <span style={{ color: C.text, fontFamily: mono }}>{cedi(state.total)}</span> by {state.paymentMethod}</div>
+      {state.change != null && state.change > 0 && (
+        <div style={{ fontSize: '4.2vh', fontWeight: 700, color: C.green }}>Your change: <span style={{ fontFamily: mono }}>{cedi(state.change)}</span></div>
+      )}
+      {state.customerName && state.pointsEarned > 0 && (
+        <div style={{ fontSize: '2.4vh', color: C.soft }}>
+          +{state.pointsEarned} points{state.customerPoints != null ? ` · balance ${state.customerPoints.toLocaleString()}` : ''}
         </div>
       )}
-
-      {state.mode === 'paid' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2.5vh', textAlign: 'center', padding: '0 6vw' }}>
-          <div style={{ width: '14vh', height: '14vh', borderRadius: '50%', background: 'rgba(0,212,106,0.12)', border: '2px solid rgba(0,212,106,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8vh', color: '#00d46a' }}>✓</div>
-          <div style={{ fontSize: '6vh', fontWeight: 800, fontFamily: 'Roboto Slab, serif' }}>Thank you{state.customerName ? `, ${state.customerName.split(' ')[0]}` : ''}!</div>
-          <div style={{ fontSize: '3vh', color: '#9ca3af' }}>Paid {cedi(state.total)} by {state.paymentMethod}</div>
-          {state.change != null && state.change > 0 && (
-            <div style={{ fontSize: '4.5vh', fontWeight: 700, color: '#00d46a' }}>Your change: {cedi(state.change)}</div>
-          )}
-          {state.customerName && state.pointsEarned > 0 && (
-            <div style={{ fontSize: '2.6vh', color: '#c084fc' }}>You earned {state.pointsEarned} points{state.customerPoints != null ? ` · Balance ${state.customerPoints.toLocaleString()}` : ''}</div>
-          )}
-          <div style={{ fontSize: '2.4vh', color: '#6b7280' }}>{state.message}</div>
-        </div>
-      )}
-
-      <footer style={{ padding: '1.4vh 3vw', fontSize: '1.6vh', color: '#374151', textAlign: 'right' }}>Double-click for full screen</footer>
+      <div style={{ fontSize: '2.2vh', color: C.faint }}>{state.txnCode} · {state.message}</div>
     </div>
   )
 }

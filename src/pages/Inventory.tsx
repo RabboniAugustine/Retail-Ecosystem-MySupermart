@@ -220,7 +220,7 @@ export function Inventory({ refresh }: { refresh: number }) {
         </div>
 
         {rows.length === 0 ? (
-          <EmptyState icon="📦" title="No products yet" sub="Add your first product to get started" />
+          <EmptyState title="No products yet" sub="Add your first product to get started" />
         ) : (
           <div className="table-wrap">
             <table>
@@ -265,7 +265,7 @@ export function Inventory({ refresh }: { refresh: number }) {
                 })}
               </tbody>
             </table>
-            {filtered.length === 0 && <EmptyState icon="🔎" title="Nothing matches" />}
+            {filtered.length === 0 && <EmptyState title="Nothing matches" />}
           </div>
         )}
       </div>

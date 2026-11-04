@@ -39,14 +39,10 @@ export const ICONS: Record<string, string> = {
   menu: 'M3 12h18M3 6h18M3 18h18',
 }
 
-export const CATEGORY_EMOJI: Record<string, string> = {
-  Dairy: '🥛', Bakery: '🍞', Beverages: '🥤', Produce: '🥬',
-  Grains: '🌾', Oils: '🍳', Meat: '🥩', Frozen: '🧊', Default: '📦'
-}
-
 export const CATEGORY_COLORS: Record<string, string> = {
   Dairy: '#3b82f6', Bakery: '#f59e0b', Beverages: '#a855f7',
-  Produce: '#00d46a', Grains: '#06b6d4', Oils: '#ef4444', Default: '#9ca3af'
+  Produce: '#00d46a', Grains: '#06b6d4', Oils: '#ef4444', Meat: '#f43f5e', Frozen: '#38bdf8',
+  Household: '#94a3b8', Toiletries: '#ec4899', Snacks: '#f97316', Default: '#9ca3af'
 }
 
 export const TS = {
@@ -89,11 +85,11 @@ export function Spinner() {
   )
 }
 
-export function EmptyState({ icon, title, sub, action }: { icon: string; title: string; sub?: string; action?: React.ReactNode }) {
+export function EmptyState({ title, sub, action }: { icon?: string; title: string; sub?: string; action?: React.ReactNode }) {
   return (
-    <div style={{ textAlign: 'center', padding: '56px 0', color: '#4b5563', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-      <div style={{ fontSize: 36, marginBottom: 4 }}>{icon}</div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: '#9ca3af' }}>{title}</div>
+    <div style={{ textAlign: 'center', padding: '48px 0', color: '#4b5563', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 12, height: 12, borderRadius: '50%', border: '1.5px solid #374151', marginBottom: 6 }} />
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af' }}>{title}</div>
       {sub && <div style={{ fontSize: 13 }}>{sub}</div>}
       {action}
     </div>

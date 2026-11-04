@@ -74,7 +74,7 @@ export function Customers({ refresh }: { refresh: number }) {
           <Btn onClick={openNew}><Icon d={ICONS.plus} size={14} /> Add customer</Btn>
         </div>
         {customers.length === 0 ? (
-          <EmptyState icon="👤" title="No customers yet" sub="Add customers here or from the till to track loyalty points" />
+          <EmptyState title="No customers yet" sub="Add customers here or from the till to track loyalty points" />
         ) : (
           <div className="table-wrap">
             <table>

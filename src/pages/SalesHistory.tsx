@@ -73,7 +73,7 @@ export function SalesHistory({ refresh }: { refresh: number }) {
           <div style={{ flex: 1 }} />
           <button onClick={exportCsv} className="pos-key" style={{ padding: '8px 12px', gap: 6, color: '#9ca3af' }}><Icon d={ICONS.download} size={14} /> Export CSV</button>
         </div>
-        {loading ? <Spinner /> : shown.length === 0 ? <EmptyState icon="🧾" title="No sales in this period" /> : (
+        {loading ? <Spinner /> : shown.length === 0 ? <EmptyState title="No sales in this period" /> : (
           <div className="table-wrap">
             <table>
               <thead><tr><Th>Date</Th><Th>Sale</Th><Th>Customer</Th><Th>Salesperson</Th><Th>Payment</Th><Th right>Discount</Th><Th right>Total</Th><Th>Status</Th></tr></thead>
