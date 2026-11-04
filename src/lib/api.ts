@@ -57,3 +57,32 @@ export const setStaffRole = (userId: string, role: string) =>
 
 export const setStaffName = (userId: string, name: string) =>
   rpc<void>('ms_set_staff_name', { p_user_id: userId, p_name: name })
+
+// ── Staff logins created by the owner ───────────────────────────────────────
+// A username without "@" is stored as <username>@staff.mysupermart.
+export const STAFF_DOMAIN = '@staff.mysupermart'
+export const loginToEmail = (login: string) => {
+  const l = login.trim().toLowerCase()
+  return l.includes('@') ? l : l + STAFF_DOMAIN
+}
+export const emailToLogin = (email: string | null | undefined) =>
+  email ? (email.endsWith(STAFF_DOMAIN) ? email.slice(0, -STAFF_DOMAIN.length) : email) : ''
+
+export const createStaff = (fullName: string, login: string, password: string, role: 'sales' | 'owner') =>
+  rpc<string>('ms_create_staff', { p_full_name: fullName, p_login: login, p_password: password, p_role: role })
+
+export const resetStaffPassword = (userId: string, password: string) =>
+  rpc<void>('ms_reset_staff_password', { p_user_id: userId, p_password: password })
+
+/** True until the first (owner) account exists. */
+export async function setupNeeded(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('ms_setup_needed')
+  return error ? true : Boolean(data)
+}
+
+/** Easy-to-read password, e.g. "mango-4821". */
+export function generatePassword() {
+  const words = ['mango', 'kente', 'cocoa', 'plantain', 'shea', 'baobab', 'river', 'market', 'sunrise', 'palm', 'harbor', 'yam']
+  const n = new Uint32Array(2); crypto.getRandomValues(n)
+  return `${words[n[0] % words.length]}-${1000 + (n[1] % 9000)}`
+}

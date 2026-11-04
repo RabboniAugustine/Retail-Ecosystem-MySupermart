@@ -24,9 +24,9 @@ The two windows talk to each other directly inside the browser, so the display u
 
 ### Roles and logins
 
-- The **first account created becomes the Owner**.
-- Salespeople open the app, choose **Create account**, then the owner approves them in **Staff**.
-- The owner can disable a salesperson at any time; they lose access immediately.
+- The **first account created becomes the Owner** ("Create owner account" only shows until an owner exists).
+- The owner creates each salesperson's **username and password** in **Staff → Add staff** and gives them the details. Staff cannot create their own accounts.
+- The owner can **reset a password** or **disable** a salesperson at any time; a disabled account loses access immediately.
 
 ## Tech stack
 
@@ -77,13 +77,14 @@ In the Supabase **SQL Editor**, open each file, paste it and click **Run**, **in
 1. `supabase/migrations/001_base_schema.sql` — tables (creates them, or adds missing columns to existing ones)
 2. `supabase/migrations/002_roles_and_security.sql` — logins, roles, settings and access rules
 3. `supabase/migrations/003_pos_functions.sql` — checkout, refunds, stock changes
+4. `supabase/migrations/004_owner_creates_staff.sql` — owner creates staff logins
 
-All three are safe to run again. Existing products, customers and sales are kept.
+All four are safe to run again. Existing products, customers and sales are kept.
 
 Then in Supabase **Authentication**:
 
 - **URL Configuration → Site URL**: set it to your live address (e.g. `https://retail-ecosystem-my-supermart.vercel.app`) so confirmation emails link back to the app.
-- **Sign In / Providers → Email → Confirm email**: leave on (staff confirm by email before signing in) or turn off so new staff can sign in straight away. Either way the owner still has to approve them.
+- After the owner account exists, turn off **Allow new users to sign up** (Authentication → Sign In / Providers). Staff logins made by the owner keep working.
 
 Finally, open the app and **create the owner account first**.
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth'
+import { emailToLogin } from '../lib/api'
 import { Icon, ICONS } from './ui'
 
 export type NavItem = { id: string; label: string; icon: string }
@@ -51,7 +52,7 @@ export function Shell({ nav, active, onNavigate, onSync, children, roleLabel }: 
           {wide && (
             <div style={{ padding: '4px 12px 8px', minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#e8ecf4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{profile?.full_name}</div>
-              <div style={{ fontSize: 11, color: '#4b5563', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{profile?.email}</div>
+              <div style={{ fontSize: 11, color: '#4b5563', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emailToLogin(profile?.email)}</div>
             </div>
           )}
           <div className="sidebar-link" onClick={signOut} title="Sign out">
