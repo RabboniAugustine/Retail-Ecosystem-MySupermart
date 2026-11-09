@@ -1,6 +1,10 @@
 /** ₵1,234.50 */
-export const cedi = (n: number | string | null | undefined, digits = 2) =>
-  `₵${Number(n ?? 0).toLocaleString('en-GH', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
+export const cedi = (n: number | string | null | undefined, digits = 2) => {
+  let v = Number(n ?? 0)
+  if (!isFinite(v) || Math.abs(v) < 0.5 / 10 ** digits) v = 0
+  const s = Math.abs(v).toLocaleString('en-GH', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  return v < 0 ? `−₵${s}` : `₵${s}`
+}
 
 /** Local calendar date as YYYY-MM-DD (not UTC, so "today" is correct after midnight UTC). */
 export const localDate = (d: Date | string = new Date()) => {

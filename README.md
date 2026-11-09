@@ -10,8 +10,8 @@ A web-based retail management system for a supermarket: point of sale, inventory
 
 | Screen | Who | What they can do |
 | --- | --- | --- |
-| **Owner dashboard** | Shop owner(s) | Everything: today's sales and profit, sales per salesperson, POS, Sales & Refunds (filter, reprint, refund, export CSV), Inventory (with Stock log and Removal log), Accounting, Reports, Customers, Suppliers, Staff (approve / disable salespeople) and Settings (VAT, max discount, receipt details) |
-| **Salesperson dashboard** | Till staff | My Shift (my sales today, cash to hand in), Point of Sale, Stock (add / edit products, receive or count stock), Customers. No costs, profit, accounting or reports. Discount is capped by the owner's limit |
+| **Owner dashboard** | Shop owner(s) | Everything: today's sales and profit, sales per salesperson, POS, Sales & Refunds, Inventory (with Stock log and Removal log), Accounting (purchases, expenses, account balances, money in / out), Reports (Sales, Purchases, Profit & Loss, Stock Summary, Bank Statement, Expenses), Utilities (import, bulk update and export items), Customers, Suppliers, Staff and Settings |
+| **Salesperson dashboard** | Till staff | My Shift, Point of Sale, Stock, Accounting (add purchases and expenses; no account balances), Customers. No reports or utilities. Discount is capped by the owner's limit |
 | **Customer display** | Shoppers | A second screen facing the customer. Shows each item as it is scanned, the total, change due and loyalty points, then a thank-you screen |
 
 ### Setting up the customer display (two screens, one computer)
@@ -79,8 +79,9 @@ In the Supabase **SQL Editor**, open each file, paste it and click **Run**, **in
 2. `supabase/migrations/002_roles_and_security.sql` — logins, roles, settings and access rules
 3. `supabase/migrations/003_pos_functions.sql` — checkout, refunds, stock changes
 4. `supabase/migrations/004_owner_creates_staff.sql` — owner creates staff logins
+5. `supabase/migrations/005_accounting_reports_utilities.sql` — purchases, money accounts, reports, import / bulk update
 
-All four are safe to run again. Existing products, customers and sales are kept.
+All five are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them in order. Existing products, customers and sales are kept.
 
 Then in Supabase **Authentication**:
 
@@ -102,6 +103,13 @@ Deploy to Vercel by importing the repository and keeping the default Vite settin
 The POS calls the database function `ms_checkout`. Prices, discount, VAT and the total are calculated **in the database** from the product prices, so they cannot be changed from the browser. In one transaction it records the sale and the salesperson, saves each line (with the cost at the time, for profit reports), reduces stock, blocks the sale if stock is short (optional setting), checks the salesperson's discount limit and, if a customer is attached, adds loyalty points (1 point per ₵1) and updates their tier. If anything fails, nothing is saved.
 
 Every other stock change (deliveries, stock counts, refunds, removals) goes through `ms_adjust_stock`, `ms_refund` or `ms_remove_product` and is written to the **Stock log** with who did it and why.
+
+## Accounting
+
+- **Money accounts:** Cash, Bank and Mobile Money. Cash sales go to Cash, card sales to Bank and MoMo sales to Mobile Money; refunds take the money back out of the same account.
+- **Add purchase:** stock bought from a supplier. Stock goes up, the item's cost price becomes the new cost, and you can set a new selling price. Pay in full, in part or on credit; anything unpaid is added to the supplier's balance and can be paid later from the purchase. The owner can void a purchase entered by mistake.
+- **Add expense:** rent, transport, utilities and so on, paid from one of the accounts. Salespeople can add; only the owner can delete.
+- **Money in / out (owner):** transfers between accounts (e.g. depositing cash in the bank), opening balances, and owner withdrawals. These are what make the Bank Statement match your real bank.
 
 ## Security
 

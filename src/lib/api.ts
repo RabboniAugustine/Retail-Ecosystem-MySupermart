@@ -86,3 +86,50 @@ export function generatePassword() {
   const n = new Uint32Array(2); crypto.getRandomValues(n)
   return `${words[n[0] % words.length]}-${1000 + (n[1] % 9000)}`
 }
+
+// ── Fetch every row (Supabase returns at most 1000 rows per request) ─────────
+export async function fetchAll<T>(build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string; code?: string } | null }>): Promise<T[]> {
+  const out: T[] = []
+  const size = 1000
+  for (let page = 0; page < 200; page++) {
+    const { data, error } = await build(page * size, page * size + size - 1)
+    if (error) throw new Error(friendlyError(error))
+    out.push(...(data ?? []))
+    if (!data || data.length < size) break
+  }
+  return out
+}
+
+// ── Accounting ──────────────────────────────────────────────────────────────
+export const ACCOUNTS = ['Cash', 'Bank', 'Mobile Money'] as const
+export type Account = typeof ACCOUNTS[number]
+
+export const createPurchase = (p: {
+  supplier_id: number | null; invoice_no: string; purchase_date: string; note: string
+  amount_paid: number; paid_from: Account
+  items: { product_id: number; quantity: number; unit_cost: number; new_price: number | null }[]
+}) => rpc<{ id: number; purchase_code: string; total: number; amount_paid: number }>('ms_create_purchase', { p })
+
+export const payPurchase = (id: number, amount: number, account: Account, date: string) =>
+  rpc<void>('ms_pay_purchase', { p_purchase_id: id, p_amount: amount, p_account: account, p_date: date })
+
+export const voidPurchase = (id: number, reason: string) => rpc<void>('ms_void_purchase', { p_purchase_id: id, p_reason: reason })
+
+export const moneyEntry = (kind: 'transfer' | 'money_in' | 'money_out', amount: number, from: Account | null, to: Account | null, description: string, date: string) =>
+  rpc<void>('ms_money_entry', { p_kind: kind, p_amount: amount, p_from: from, p_to: to, p_description: description, p_date: date })
+
+export const accountBalances = () => rpc<Record<Account, number>>('ms_account_balances', {})
+
+// ── Utilities ───────────────────────────────────────────────────────────────
+export type RowError = { row: number; name: string | null; error: string }
+export const importItems = (rows: Record<string, unknown>[]) =>
+  rpc<{ created: number; errors: RowError[] }>('ms_import_items', { p_rows: rows })
+export const bulkUpdateItems = (rows: Record<string, unknown>[], reason: string) =>
+  rpc<{ updated: number; errors: RowError[] }>('ms_bulk_update_items', { p_rows: rows, p_reason: reason })
+
+// ── Reports ─────────────────────────────────────────────────────────────────
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Accra'
+export const report = <T>(name: 'sales' | 'pnl' | 'stock', from: string, to: string) =>
+  rpc<T>(`ms_report_${name}`, { p_from: from, p_to: to, p_tz: TZ })
+export const statementReport = <T>(account: Account, from: string, to: string) =>
+  rpc<T>('ms_report_statement', { p_account: account, p_from: from, p_to: to, p_tz: TZ })

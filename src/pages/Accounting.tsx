@@ -1,194 +1,501 @@
-import { useCallback, useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { supabase, friendlyError } from '../lib/api'
-import { isCompleted, localDate } from '../lib/format'
-import type { Expense, Transaction } from '../lib/types'
-import { Btn, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner, StatCard, TS, cediTip } from '../components/ui'
-import { grossProfit } from './Dashboard'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  supabase, friendlyError, fetchAll, createPurchase, payPurchase, voidPurchase, moneyEntry, accountBalances,
+  ACCOUNTS, type Account,
+} from '../lib/api'
+import { useAuth } from '../lib/auth'
+import { cedi, localDate } from '../lib/format'
+import { presetRange, rangeLabel, type Preset, type Range } from '../lib/ranges'
+import type { ExpenseRow, Product, Purchase, Supplier } from '../lib/types'
+import { Btn, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner, StatCard, Th, Td } from '../components/ui'
+import { RangePicker } from '../components/RangePicker'
 
-// ── Accounting ─────────────────────────────────────────────────────────────
+export const EXPENSE_CATEGORIES = ['Rent', 'Utilities', 'Salaries', 'Transport', 'Marketing', 'Maintenance', 'Supplies', 'Bank charges', 'Taxes & levies', 'Other']
 
-const EXPENSE_CATEGORIES = ['Cost of Goods', 'Rent', 'Utilities', 'Wages', 'Transport', 'Marketing', 'Equipment', 'Maintenance', 'Other']
+const purchaseBadge = (s: string) =>
+  s === 'Paid' ? 'badge badge-green' : s === 'Part paid' ? 'badge badge-yellow' : s === 'Void' ? 'badge' : 'badge badge-red'
 
 export function Accounting({ refresh }: { refresh: number }) {
-  const [txns, setTxns] = useState<Transaction[]>([])
-  const [expenses, setExpenses] = useState<Expense[]>([])
+  const { profile } = useAuth()
+  const isOwner = profile?.role === 'owner'
+
+  const [preset, setPreset] = useState<Preset>('month')
+  const [range, setRange] = useState<Range>(presetRange('month'))
+  const [tab, setTab] = useState<'purchases' | 'expenses'>('purchases')
+  const [purchases, setPurchases] = useState<Purchase[]>([])
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([])
+  const [balances, setBalances] = useState<Record<Account, number> | null>(null)
+  const [owed, setOwed] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ description: '', category: 'Cost of Goods', amount: '', date: localDate() })
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [modal, setModal] = useState<'purchase' | 'expense' | 'money' | null>(null)
+  const [openPurchase, setOpenPurchase] = useState<number | null>(null)
 
   const load = useCallback(async () => {
-    setLoading(true)
-    const [t, e] = await Promise.allSettled([
-      supabase.from('ms_transactions').select('*, ms_transaction_items(quantity, unit_cost)').neq('status', 'Refunded').order('created_at', { ascending: false }),
-      supabase.from('ms_expenses').select('*').order('date', { ascending: false }),
-    ])
-    if (t.status === 'fulfilled' && t.value.data) setTxns((t.value.data as Transaction[]).filter(isCompleted))
-    if (e.status === 'fulfilled' && e.value.data) setExpenses(e.value.data)
+    setLoading(true); setError('')
+    try {
+      const [p, e] = await Promise.all([
+        fetchAll<Purchase>((a, b) => supabase.from('ms_purchases').select('*, ms_purchase_items(id)')
+          .gte('purchase_date', range.from).lte('purchase_date', range.to).order('purchase_date', { ascending: false }).order('id', { ascending: false }).range(a, b)),
+        fetchAll<ExpenseRow>((a, b) => supabase.from('ms_expenses').select('*')
+          .gte('date', range.from).lte('date', range.to).order('date', { ascending: false }).order('id', { ascending: false }).range(a, b)),
+      ])
+      setPurchases(p); setExpenses(e)
+      if (isOwner) {
+        setBalances(await accountBalances())
+        const { data } = await supabase.from('ms_suppliers').select('payable')
+        setOwed(((data as { payable: number }[] | null) ?? []).reduce((s, x) => s + Number(x.payable), 0))
+      }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not load') }
     setLoading(false)
-  }, [])
+  }, [range, isOwner])
 
   useEffect(() => { load() }, [load, refresh])
 
-  const handleAddExpense = async () => {
-    if (!form.description || !form.amount) return
-    setSaving(true); setError('')
-    const { error: insErr } = await supabase.from('ms_expenses').insert({ description: form.description, category: form.category, amount: Number(form.amount), date: form.date })
-    if (insErr) { setError(friendlyError(insErr)); setSaving(false); return }
-    setShowAdd(false)
-    setForm({ description: '', category: 'Cost of Goods', amount: '', date: localDate() })
-    load()
-    setSaving(false)
+  const live = purchases.filter(p => p.status !== 'Void')
+  const purchTotal = live.reduce((s, p) => s + Number(p.total), 0)
+  const purchDue = live.reduce((s, p) => s + Number(p.total) - Number(p.amount_paid), 0)
+  const expTotal = expenses.reduce((s, e) => s + Number(e.amount), 0)
+
+  const deleteExpense = async (e: ExpenseRow) => {
+    if (!window.confirm(`Delete the expense "${e.description}" (${cedi(e.amount)})?`)) return
+    const { error } = await supabase.from('ms_expenses').delete().eq('id', e.id)
+    if (error) setError(friendlyError(error)); else load()
   }
-
-  const handleDeleteExpense = async (id: number) => {
-    if (!window.confirm('Delete this expense?')) return
-    await supabase.from('ms_expenses').delete().eq('id', id)
-    setExpenses(prev => prev.filter(e => e.id !== id))
-  }
-
-  const totalRevenue = txns.reduce((s, t) => s + Number(t.total), 0)
-  const totalTax = txns.reduce((s, t) => s + Number(t.tax), 0)
-  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0)
-  // Profit = sales before VAT − cost of goods sold − expenses. Where an old sale has
-  // no cost recorded, its full pre-VAT amount is counted (as before).
-  const goodsProfit = txns.reduce((s, t) => s + (grossProfit(t) ?? (Number(t.total) - Number(t.tax))), 0)
-  const netProfit = goodsProfit - totalExpenses
-  const margin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0'
-
-  const expByCategory = EXPENSE_CATEGORIES.map(cat => ({
-    name: cat,
-    value: expenses.filter(e => e.category === cat).reduce((s, e) => s + Number(e.amount), 0),
-    color: ['#ef4444','#f59e0b','#00d46a','#3b82f6','#a855f7','#06b6d4','#ec4899','#84cc16','#9ca3af'][EXPENSE_CATEGORIES.indexOf(cat) % 9]
-  })).filter(c => c.value > 0)
-
-  const monthlyRevenue = (() => {
-    const map: Record<string, number> = {}
-    txns.forEach(t => {
-      const m = t.created_at.slice(0, 7)
-      map[m] = (map[m] || 0) + Number(t.total)
-    })
-    return Object.entries(map).sort().slice(-6).map(([m, v]) => ({ month: m.slice(5), revenue: v }))
-  })()
-
-  if (loading) return <Spinner />
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="g4">
-        <StatCard label="Total Revenue" value={`₵${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} sub={`${txns.length} transactions`} icon="pos" color="#00d46a" />
-        <StatCard label="Total Expenses" value={`₵${totalExpenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} sub={`${expenses.length} expense entries`} icon="trending" color="#ef4444" />
-        <StatCard label="Net Profit" value={`₵${netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} sub={`${margin}% · after cost of goods & expenses`} icon="accounting" color={netProfit >= 0 ? '#3b82f6' : '#ef4444'} />
-        <StatCard label="VAT Collected" value={`₵${totalTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} sub="12.5% on all sales" icon="reports" color="#a855f7" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Btn onClick={() => setModal('purchase')}><Icon d={ICONS.plus} size={14} /> Add purchase</Btn>
+        <Btn onClick={() => setModal('expense')}><Icon d={ICONS.plus} size={14} /> Add expense</Btn>
+        {isOwner && <Btn variant="ghost" onClick={() => setModal('money')}>Money in / out</Btn>}
+        <div style={{ flex: 1 }} />
+        <RangePicker preset={preset} range={range} onChange={(p, r) => { setPreset(p); setRange(r) }} />
       </div>
 
-      <div className="g-split-r">
-        <div className="stat-card">
-          <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 16px' }}>Monthly Revenue</h3>
-          {monthlyRevenue.length === 0 ? (
-            <EmptyState title="No sales data yet" sub="Revenue chart appears after first sales" />
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₵${v}`} />
-                <Tooltip contentStyle={TS} formatter={cediTip('Revenue')} />
-                <Bar dataKey="revenue" fill="#00d46a" radius={[5, 5, 0, 0]} opacity={0.9} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+      {isOwner && balances && (
+        <div className="g4">
+          <StatCard label="Cash" value={cedi(balances.Cash)} sub="Cash drawer / safe" icon="accounting" color="#00d46a" />
+          <StatCard label="Bank" value={cedi(balances.Bank)} sub="Card sales and bank payments" icon="accounting" color="#3b82f6" />
+          <StatCard label="Mobile Money" value={cedi(balances['Mobile Money'])} sub="MoMo wallet" icon="accounting" color="#a855f7" />
+          <StatCard label="Owed to suppliers" value={cedi(owed)} sub="Unpaid purchases" icon="suppliers" color="#ef4444" />
         </div>
+      )}
 
-        <div className="stat-card">
-          <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: '0 0 16px' }}>Expenses by Category</h3>
-          {expByCategory.length === 0 ? (
-            <EmptyState title="No expenses logged" />
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={130}>
-                <PieChart>
-                  <Pie data={expByCategory} cx="50%" cy="50%" innerRadius={35} outerRadius={58} paddingAngle={3} dataKey="value">
-                    {expByCategory.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={TS} formatter={cediTip('')} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 8 }}>
-                {expByCategory.map(c => (
-                  <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.name}</span>
-                    </div>
-                    <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: '#e8ecf4' }}>₵{c.value.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+      <div className="g3">
+        <StatCard label="Purchases" value={cedi(purchTotal)} sub={`${live.length} in ${rangeLabel(range)}`} icon="inventory" color="#06b6d4" />
+        <StatCard label="Still to pay" value={cedi(purchDue)} sub="On these purchases" icon="alert" color="#f59e0b" />
+        <StatCard label="Expenses" value={cedi(expTotal)} sub={`${expenses.length} in ${rangeLabel(range)}`} icon="receipt" color="#ef4444" />
       </div>
+
+      <ErrorBox>{error}</ErrorBox>
 
       <div className="stat-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: 0 }}>Expense Ledger</h3>
-          <Btn onClick={() => setShowAdd(true)}><Icon d={ICONS.plus} size={14} /> Log Expense</Btn>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+          {([['purchases', `Purchases (${purchases.length})`], ['expenses', `Expenses (${expenses.length})`]] as const).map(([k, l]) => (
+            <button key={k} className="tab-btn" onClick={() => setTab(k)}
+              style={{ background: tab === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: tab === k ? '#00d46a' : '#6b7280' }}>{l}</button>
+          ))}
         </div>
-        {expenses.length === 0 ? (
-          <EmptyState title="No expenses logged" sub="Record expenses to track profit accurately"
-            action={<Btn onClick={() => setShowAdd(true)}><Icon d={ICONS.plus} size={14} /> Log Expense</Btn>} />
+        {loading ? <Spinner /> : tab === 'purchases' ? (
+          purchases.length === 0 ? <EmptyState title="No purchases in this period" sub="Record stock bought from suppliers with Add purchase" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><Th>Date</Th><Th>Purchase</Th><Th>Supplier</Th><Th>Invoice</Th><Th right>Items</Th><Th right>Total</Th><Th right>Paid</Th><Th>Status</Th><Th>By</Th></tr></thead>
+                <tbody>
+                  {purchases.map(p => (
+                    <tr key={p.id} className="table-row" onClick={() => setOpenPurchase(p.id)} style={{ cursor: 'pointer', opacity: p.status === 'Void' ? 0.5 : 1 }}>
+                      <Td mono muted>{p.purchase_date}</Td>
+                      <Td mono>{p.purchase_code}</Td>
+                      <Td strong>{p.supplier_name ?? '—'}</Td>
+                      <Td mono muted>{p.invoice_no ?? '—'}</Td>
+                      <Td mono right>{p.ms_purchase_items?.length ?? 0}</Td>
+                      <Td mono strong right>{cedi(p.total)}</Td>
+                      <Td mono right>{cedi(p.amount_paid)}</Td>
+                      <Td><span className={purchaseBadge(p.status)}>{p.status}</span></Td>
+                      <Td>{p.created_by_name ?? '—'}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         ) : (
-          <div className="table-wrap"><table>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                {['Date', 'Description', 'Category', 'Amount', ''].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '6px 10px', fontSize: 10, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map(e => (
-                <tr key={e.id} className="table-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <td style={{ padding: '10px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#6b7280' }}>{e.date}</td>
-                  <td style={{ padding: '10px 10px', fontSize: 13, color: '#e8ecf4' }}>{e.description}</td>
-                  <td style={{ padding: '10px 10px' }}><span className="badge badge-gray">{e.category}</span></td>
-                  <td style={{ padding: '10px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 600, color: '#ef4444' }}>₵{Number(e.amount).toFixed(2)}</td>
-                  <td style={{ padding: '10px 10px', textAlign: 'right' }}>
-                    <button onClick={() => handleDeleteExpense(e.id)} style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: 4, borderRadius: 4 }} onMouseEnter={x => (x.currentTarget.style.color = '#ef4444')} onMouseLeave={x => (x.currentTarget.style.color = '#4b5563')}>
-                      <Icon d={ICONS.trash} size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
+          expenses.length === 0 ? <EmptyState title="No expenses in this period" sub="Record rent, transport, utilities and other costs with Add expense" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><Th>Date</Th><Th>Description</Th><Th>Category</Th><Th>Paid from</Th><Th right>Amount</Th><Th>By</Th>{isOwner && <Th />}</tr></thead>
+                <tbody>
+                  {expenses.map(e => (
+                    <tr key={e.id} className="table-row">
+                      <Td mono muted>{e.date}</Td>
+                      <Td strong style={{ whiteSpace: 'normal' }}>{e.description}</Td>
+                      <Td><span className="badge badge-blue">{e.category}</span></Td>
+                      <Td>{e.paid_from}</Td>
+                      <Td mono strong right style={{ color: '#ef4444' }}>{cedi(e.amount)}</Td>
+                      <Td>{e.created_by_name ?? '—'}</Td>
+                      {isOwner && <Td><button onClick={() => deleteExpense(e)} title="Delete" style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.trash} size={14} /></button></Td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </div>
 
-      {showAdd && (
-        <Modal title="Log Expense" onClose={() => setShowAdd(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Field label="Description *"><input className="input-field" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Monthly rent payment" /></Field>
-            <div className="g2">
-              <Field label="Category">
-                <select className="input-field" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                  {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </Field>
-              <Field label="Amount (₵) *"><input className="input-field" type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" /></Field>
-            </div>
-            <Field label="Date"><input className="input-field" type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Field>
-            <ErrorBox>{error}</ErrorBox>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
-              <Btn variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Btn>
-              <Btn onClick={handleAddExpense} disabled={saving || !form.description || !form.amount}>{saving ? 'Saving…' : 'Log Expense'}</Btn>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {modal === 'purchase' && <AddPurchase onClose={() => setModal(null)} onSaved={() => { setModal(null); setTab('purchases'); load() }} />}
+      {modal === 'expense' && <AddExpense onClose={() => setModal(null)} onSaved={() => { setModal(null); setTab('expenses'); load() }} />}
+      {modal === 'money' && <MoneyEntry onClose={() => setModal(null)} onSaved={() => { setModal(null); load() }} />}
+      {openPurchase != null && <PurchaseDetail id={openPurchase} onClose={() => setOpenPurchase(null)} onChanged={load} />}
     </div>
   )
 }
+
+// ── Add purchase ─────────────────────────────────────────────────────────────
+type PLine = { product: Product & { stock: number }; qty: string; cost: string; newPrice: string }
+
+function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [products, setProducts] = useState<(Product & { stock: number })[]>([])
+  const [supplierId, setSupplierId] = useState('')
+  const [invoice, setInvoice] = useState('')
+  const [date, setDate] = useState(localDate())
+  const [note, setNote] = useState('')
+  const [lines, setLines] = useState<PLine[]>([])
+  const [term, setTerm] = useState('')
+  const [payMode, setPayMode] = useState<'full' | 'part' | 'credit'>('full')
+  const [paid, setPaid] = useState('')
+  const [account, setAccount] = useState<Account>('Cash')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    supabase.from('ms_suppliers').select('*').order('name').then(({ data }) => setSuppliers((data as Supplier[] | null) ?? []))
+    fetchAll<Product & { ms_inventory: { stock: number } | { stock: number }[] | null }>((a, b) =>
+      supabase.from('ms_products').select('id, name, sku, barcode, category, price, cost, ms_inventory(stock)').eq('active', true).order('name').range(a, b))
+      .then(rows => setProducts(rows.map(r => {
+        const inv = Array.isArray(r.ms_inventory) ? r.ms_inventory[0] : r.ms_inventory
+        return { ...r, stock: inv?.stock ?? 0 }
+      })))
+  }, [])
+
+  const q = term.trim().toLowerCase()
+  const matches = q ? products.filter(p => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode === term.trim()).slice(0, 8) : []
+
+  const add = (p: Product & { stock: number }) => {
+    setLines(prev => prev.some(l => l.product.id === p.id)
+      ? prev.map(l => l.product.id === p.id ? { ...l, qty: String((Number(l.qty) || 0) + 1) } : l)
+      : [...prev, { product: p, qty: '1', cost: String(Number(p.cost)), newPrice: '' }])
+    setTerm(''); searchRef.current?.focus()
+  }
+
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    const exact = products.find(p => p.barcode === term.trim() || p.sku?.toLowerCase() === q)
+    if (exact) add(exact); else if (matches.length === 1) add(matches[0])
+  }
+
+  const setLine = (id: number, patch: Partial<PLine>) => setLines(prev => prev.map(l => l.product.id === id ? { ...l, ...patch } : l))
+  const total = lines.reduce((s, l) => s + Math.round((Number(l.qty) || 0) * (Number(l.cost) || 0) * 100) / 100, 0)
+  const paidNum = payMode === 'full' ? total : payMode === 'credit' ? 0 : Math.min(total, Number(paid) || 0)
+
+  const save = async () => {
+    setError('')
+    if (!lines.length) { setError('Add at least one item.'); return }
+    for (const l of lines) {
+      if (!Number.isInteger(Number(l.qty)) || Number(l.qty) <= 0) { setError(`Enter a whole quantity for ${l.product.name}.`); return }
+      if (l.cost === '' || Number(l.cost) < 0) { setError(`Enter the unit cost for ${l.product.name}.`); return }
+    }
+    if (paidNum < total && !supplierId) { setError('Choose the supplier when the purchase is not fully paid, so the amount owed is recorded.'); return }
+    setBusy(true)
+    try {
+      await createPurchase({
+        supplier_id: supplierId ? Number(supplierId) : null, invoice_no: invoice, purchase_date: date, note,
+        amount_paid: paidNum, paid_from: account,
+        items: lines.map(l => ({ product_id: l.product.id, quantity: Number(l.qty), unit_cost: Number(l.cost), new_price: l.newPrice === '' ? null : Number(l.newPrice) })),
+      })
+      onSaved()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the purchase') }
+    setBusy(false)
+  }
+
+  const inputSm: React.CSSProperties = { padding: '6px 8px', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }
+
+  return (
+    <Modal title="Add purchase" onClose={onClose} width={860}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="g3">
+          <Field label="Supplier">
+            <select className="input-field" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
+              <option value="">No supplier (paid on the spot)</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Supplier invoice no."><input className="input-field" value={invoice} onChange={e => setInvoice(e.target.value)} placeholder="Optional" /></Field>
+          <Field label="Date"><input className="input-field" type="date" value={date} max={localDate()} onChange={e => setDate(e.target.value)} /></Field>
+        </div>
+
+        <div style={{ position: 'relative' }}>
+          <Field label="Add items (scan barcode or search)">
+            <input ref={searchRef} className="input-field" value={term} onChange={e => setTerm(e.target.value)} onKeyDown={onKey} placeholder="Name, SKU or barcode" autoFocus />
+          </Field>
+          {matches.length > 0 && (
+            <div style={{ position: 'absolute', zIndex: 5, left: 0, right: 0, top: '100%', marginTop: 4, background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden', boxShadow: '0 12px 30px rgba(0,0,0,0.5)' }}>
+              {matches.map(p => (
+                <button key={p.id} onClick={() => add(p)} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#e8ecf4', cursor: 'pointer', fontSize: 13, textAlign: 'left' }}>
+                  <span>{p.name} <span style={{ color: '#6b7280', fontSize: 11 }}>{p.sku ?? ''}</span></span>
+                  <span style={{ color: '#6b7280', fontSize: 12 }}>stock {p.stock} · cost {cedi(p.cost)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {lines.length === 0 ? (
+          <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: 16, border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 8 }}>
+            No items yet. New products must first be added in Inventory.
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><Th>Item</Th><Th right>In stock</Th><Th>Qty</Th><Th>Unit cost (₵)</Th><Th>New selling price (₵)</Th><Th right>Line total</Th><Th /></tr></thead>
+              <tbody>
+                {lines.map(l => (
+                  <tr key={l.product.id}>
+                    <Td strong style={{ whiteSpace: 'normal' }}>{l.product.name}</Td>
+                    <Td mono right muted>{l.product.stock}</Td>
+                    <Td><input className="input-field" style={{ ...inputSm, width: 70 }} type="number" min={1} step={1} value={l.qty} onChange={e => setLine(l.product.id, { qty: e.target.value })} /></Td>
+                    <Td><input className="input-field" style={{ ...inputSm, width: 90 }} type="number" min={0} step="0.01" value={l.cost} onChange={e => setLine(l.product.id, { cost: e.target.value })} /></Td>
+                    <Td><input className="input-field" style={{ ...inputSm, width: 100 }} type="number" min={0} step="0.01" value={l.newPrice} placeholder={String(Number(l.product.price))} onChange={e => setLine(l.product.id, { newPrice: e.target.value })} /></Td>
+                    <Td mono strong right>{cedi((Number(l.qty) || 0) * (Number(l.cost) || 0))}</Td>
+                    <Td><button onClick={() => setLines(prev => prev.filter(x => x.product.id !== l.product.id))} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex' }} aria-label="Remove"><Icon d={ICONS.x} size={13} /></button></Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
+          <span style={{ color: '#9ca3af', fontSize: 13 }}>{lines.length} items · {lines.reduce((s, l) => s + (Number(l.qty) || 0), 0)} units</span>
+          <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'Roboto Slab, serif', color: '#e8ecf4' }}>Total {cedi(total)}</span>
+        </div>
+
+        <div className="g3">
+          <Field label="Payment">
+            <select className="input-field" value={payMode} onChange={e => setPayMode(e.target.value as typeof payMode)}>
+              <option value="full">Paid in full</option>
+              <option value="part">Part paid</option>
+              <option value="credit">On credit (pay later)</option>
+            </select>
+          </Field>
+          {payMode === 'part'
+            ? <Field label="Amount paid now (₵)"><input className="input-field" type="number" min={0} step="0.01" value={paid} onChange={e => setPaid(e.target.value)} /></Field>
+            : <Field label="Amount paid now"><div style={{ padding: '10px 0', fontSize: 14, color: '#e8ecf4', fontFamily: 'JetBrains Mono, monospace' }}>{cedi(paidNum)}</div></Field>}
+          {payMode !== 'credit' && (
+            <Field label="Paid from">
+              <select className="input-field" value={account} onChange={e => setAccount(e.target.value as Account)}>
+                {ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </Field>
+          )}
+        </div>
+        {paidNum < total && total > 0 && <div style={{ fontSize: 12, color: '#f59e0b' }}>{cedi(total - paidNum)} will be added to what you owe {suppliers.find(s => String(s.id) === supplierId)?.name ?? 'the supplier'}.</div>}
+        <Field label="Note"><input className="input-field" value={note} onChange={e => setNote(e.target.value)} placeholder="Optional" /></Field>
+        <div style={{ fontSize: 12, color: '#6b7280' }}>Saving adds the quantities to stock and updates each item's cost price (and selling price, if you entered a new one).</div>
+        <ErrorBox>{error}</ErrorBox>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={save} disabled={busy || !lines.length}>{busy ? 'Saving…' : `Save purchase · ${cedi(total)}`}</Btn>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Purchase detail: items, pay balance, void ─────────────────────────────────
+function PurchaseDetail({ id, onClose, onChanged }: { id: number; onClose: () => void; onChanged: () => void }) {
+  const { profile } = useAuth()
+  const [p, setP] = useState<Purchase | null>(null)
+  const [mode, setMode] = useState<'view' | 'pay' | 'void'>('view')
+  const [amount, setAmount] = useState('')
+  const [account, setAccount] = useState<Account>('Cash')
+  const [date, setDate] = useState(localDate())
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from('ms_purchases').select('*, ms_purchase_items(*)').eq('id', id).single()
+    setP(data as Purchase | null)
+  }, [id])
+  useEffect(() => { load() }, [load])
+
+  const due = p ? Number(p.total) - Number(p.amount_paid) : 0
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true); setError('')
+    try { await fn(); setMode('view'); await load(); onChanged() } catch (e) { setError(e instanceof Error ? e.message : 'Failed') }
+    setBusy(false)
+  }
+
+  return (
+    <Modal title={p ? `Purchase ${p.purchase_code}` : 'Purchase'} onClose={onClose} width={640}>
+      {!p ? <Spinner /> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 16px', fontSize: 13 }}>
+            <span style={{ color: '#6b7280' }}>Supplier</span><span style={{ color: '#e8ecf4' }}>{p.supplier_name ?? '—'}</span>
+            <span style={{ color: '#6b7280' }}>Date</span><span>{p.purchase_date}{p.invoice_no ? ` · Invoice ${p.invoice_no}` : ''}</span>
+            <span style={{ color: '#6b7280' }}>Recorded by</span><span>{p.created_by_name ?? '—'}</span>
+            {p.note && <><span style={{ color: '#6b7280' }}>Note</span><span>{p.note}</span></>}
+            <span style={{ color: '#6b7280' }}>Status</span><span><span className={purchaseBadge(p.status)}>{p.status}</span></span>
+          </div>
+          {p.status === 'Void' && <ErrorBox>Voided by {p.voided_by_name} — {p.void_reason}</ErrorBox>}
+          <div className="table-wrap">
+            <table>
+              <thead><tr><Th>Item</Th><Th right>Qty</Th><Th right>Unit cost</Th><Th right>Total</Th></tr></thead>
+              <tbody>
+                {(p.ms_purchase_items ?? []).map(i => (
+                  <tr key={i.id}><Td strong style={{ whiteSpace: 'normal' }}>{i.product_name}</Td><Td mono right>{i.quantity}</Td><Td mono right>{cedi(i.unit_cost)}</Td><Td mono right strong>{cedi(i.line_total)}</Td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 20, fontSize: 13 }}>
+            <span>Total <b style={{ color: '#e8ecf4' }}>{cedi(p.total)}</b></span>
+            <span>Paid <b style={{ color: '#00d46a' }}>{cedi(p.amount_paid)}</b></span>
+            {p.status !== 'Void' && <span>Owed <b style={{ color: due > 0 ? '#ef4444' : '#9ca3af' }}>{cedi(due)}</b></span>}
+          </div>
+
+          {mode === 'pay' && (
+            <div className="g3" style={{ alignItems: 'end' }}>
+              <Field label={`Amount (max ${cedi(due)})`}><input autoFocus className="input-field" type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
+              <Field label="Paid from"><select className="input-field" value={account} onChange={e => setAccount(e.target.value as Account)}>{ACCOUNTS.map(a => <option key={a}>{a}</option>)}</select></Field>
+              <Field label="Date"><input className="input-field" type="date" value={date} max={localDate()} onChange={e => setDate(e.target.value)} /></Field>
+            </div>
+          )}
+          {mode === 'void' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 12, color: '#9ca3af' }}>Voiding takes these items back out of stock, cancels what is owed and removes its payments from the accounts. Use it only for a purchase entered by mistake.</div>
+              <Field label="Reason *"><input autoFocus className="input-field" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. entered twice" /></Field>
+            </div>
+          )}
+          <ErrorBox>{error}</ErrorBox>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+            {mode === 'view' ? (
+              <>
+                {profile?.role === 'owner' && p.status !== 'Void' && <Btn variant="danger" onClick={() => setMode('void')}>Void</Btn>}
+                {p.status !== 'Void' && due > 0 && <Btn variant="ghost" onClick={() => { setAmount(due.toFixed(2)); setMode('pay') }}>Record payment</Btn>}
+                <Btn onClick={onClose}>Close</Btn>
+              </>
+            ) : (
+              <>
+                <Btn variant="ghost" onClick={() => setMode('view')}>Back</Btn>
+                {mode === 'pay'
+                  ? <Btn disabled={busy} onClick={() => run(() => payPurchase(p.id, Number(amount), account, date))}>{busy ? 'Saving…' : 'Save payment'}</Btn>
+                  : <Btn variant="danger" disabled={busy || !reason.trim()} onClick={() => run(() => voidPurchase(p.id, reason))}>{busy ? 'Voiding…' : 'Void purchase'}</Btn>}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+// ── Add expense ──────────────────────────────────────────────────────────────
+function AddExpense({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({ description: '', category: 'Transport', amount: '', date: localDate(), paid_from: 'Cash' as Account })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const save = async () => {
+    if (!form.description.trim()) { setError('Describe the expense.'); return }
+    if (!(Number(form.amount) > 0)) { setError('Enter an amount above zero.'); return }
+    setBusy(true); setError('')
+    const { error } = await supabase.from('ms_expenses').insert({
+      description: form.description.trim(), category: form.category, amount: Number(form.amount), date: form.date, paid_from: form.paid_from,
+    })
+    setBusy(false)
+    if (error) setError(friendlyError(error)); else onSaved()
+  }
+  return (
+    <Modal title="Add expense" onClose={onClose} width={480}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Field label="Description *"><input autoFocus className="input-field" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. ECG prepaid, transport for delivery" /></Field>
+        <div className="g2">
+          <Field label="Category">
+            <select className="input-field" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+              {EXPENSE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Amount (₵) *"><input className="input-field" type="number" min={0} step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></Field>
+        </div>
+        <div className="g2">
+          <Field label="Date"><input className="input-field" type="date" value={form.date} max={localDate()} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Field>
+          <Field label="Paid from">
+            <select className="input-field" value={form.paid_from} onChange={e => setForm(f => ({ ...f, paid_from: e.target.value as Account }))}>
+              {ACCOUNTS.map(a => <option key={a}>{a}</option>)}
+            </select>
+          </Field>
+        </div>
+        <ErrorBox>{error}</ErrorBox>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save expense'}</Btn>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Owner: transfers between accounts, money in, money out ────────────────────
+function MoneyEntry({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [kind, setKind] = useState<'transfer' | 'money_in' | 'money_out'>('transfer')
+  const [from, setFrom] = useState<Account>('Cash')
+  const [to, setTo] = useState<Account>('Bank')
+  const [amount, setAmount] = useState('')
+  const [date, setDate] = useState(localDate())
+  const [desc, setDesc] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const hint = useMemo(() => ({
+    transfer: 'e.g. depositing cash from the drawer into the bank, or moving MoMo to the bank.',
+    money_in: 'e.g. an opening balance, or money the owner puts into the business.',
+    money_out: 'e.g. money the owner takes out of the business.',
+  })[kind], [kind])
+  const save = async () => {
+    setBusy(true); setError('')
+    try { await moneyEntry(kind, Number(amount), kind === 'money_in' ? null : from, kind === 'money_out' ? null : to, desc, date); onSaved() }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not save') }
+    setBusy(false)
+  }
+  return (
+    <Modal title="Money in / out" onClose={onClose} width={480}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 4, background: '#06080f', padding: 4, borderRadius: 8 }}>
+          {([['transfer', 'Transfer'], ['money_in', 'Money in'], ['money_out', 'Money out']] as const).map(([k, l]) => (
+            <button key={k} className="tab-btn" onClick={() => setKind(k)} style={{ flex: 1, background: kind === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: kind === k ? '#00d46a' : '#6b7280' }}>{l}</button>
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: '#6b7280' }}>{hint}</div>
+        <div className="g2">
+          {kind !== 'money_in' && <Field label="From"><select className="input-field" value={from} onChange={e => setFrom(e.target.value as Account)}>{ACCOUNTS.map(a => <option key={a}>{a}</option>)}</select></Field>}
+          {kind !== 'money_out' && <Field label="To"><select className="input-field" value={to} onChange={e => setTo(e.target.value as Account)}>{ACCOUNTS.map(a => <option key={a}>{a}</option>)}</select></Field>}
+        </div>
+        <div className="g2">
+          <Field label="Amount (₵)"><input autoFocus className="input-field" type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
+          <Field label="Date"><input className="input-field" type="date" value={date} max={localDate()} onChange={e => setDate(e.target.value)} /></Field>
+        </div>
+        <Field label="Description"><input className="input-field" value={desc} onChange={e => setDesc(e.target.value)} placeholder="e.g. Cash deposit at GCB" /></Field>
+        <ErrorBox>{error}</ErrorBox>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save'}</Btn>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+

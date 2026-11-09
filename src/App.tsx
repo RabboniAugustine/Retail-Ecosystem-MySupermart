@@ -11,6 +11,7 @@ import { Inventory } from './pages/Inventory'
 import { SalesHistory } from './pages/SalesHistory'
 import { Accounting } from './pages/Accounting'
 import { Reports } from './pages/Reports'
+import { Utilities } from './pages/Utilities'
 import { Customers } from './pages/Customers'
 import { Suppliers } from './pages/Suppliers'
 import { Staff } from './pages/Staff'
@@ -24,6 +25,7 @@ const OWNER_NAV: NavItem[] = [
   { id: 'inventory', label: 'Inventory', icon: 'inventory' },
   { id: 'accounting', label: 'Accounting', icon: 'accounting' },
   { id: 'reports', label: 'Reports', icon: 'reports' },
+  { id: 'utilities', label: 'Utilities', icon: 'tools' },
   { id: 'customers', label: 'Customers', icon: 'crm' },
   { id: 'suppliers', label: 'Suppliers', icon: 'suppliers' },
   { id: 'staff', label: 'Staff', icon: 'staff' },
@@ -42,6 +44,7 @@ function OwnerApp() {
       case 'inventory': return <Inventory {...r} />
       case 'accounting': return <Accounting {...r} />
       case 'reports': return <Reports {...r} />
+      case 'utilities': return <Utilities {...r} />
       case 'customers': return <Customers {...r} />
       case 'suppliers': return <Suppliers {...r} />
       case 'staff': return <Staff {...r} />
@@ -56,11 +59,12 @@ function OwnerApp() {
   )
 }
 
-// ── Salesperson: till, stock and customers. No money reports. ─────────────
+// ── Salesperson: till, stock, purchases & expenses, customers. No reports. ─
 const SALES_NAV: NavItem[] = [
   { id: 'home', label: 'My Shift', icon: 'home' },
   { id: 'pos', label: 'Point of Sale', icon: 'pos' },
   { id: 'inventory', label: 'Stock', icon: 'inventory' },
+  { id: 'accounting', label: 'Accounting', icon: 'accounting' },
   { id: 'customers', label: 'Customers', icon: 'crm' },
 ]
 
@@ -73,6 +77,7 @@ function SalesApp() {
     switch (active) {
       case 'home': return <SalesHome {...r} onStartSelling={() => setActive('pos')} />
       case 'inventory': return <Inventory {...r} />
+      case 'accounting': return <Accounting {...r} />
       case 'customers': return <Customers {...r} />
       default: return <POS onSaleComplete={() => setRefresh(n => n + 1)} />
     }

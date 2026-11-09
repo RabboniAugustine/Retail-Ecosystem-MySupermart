@@ -80,3 +80,16 @@ export type CheckoutResult = {
   payment_method: string; amount_tendered: number | null; change_due: number | null
   points_earned: number; customer_points: number | null; cashier_name: string | null
 }
+
+export type Purchase = {
+  id: number; purchase_code: string; supplier_id: number | null; supplier_name: string | null; invoice_no: string | null
+  purchase_date: string; total: number; amount_paid: number; status: 'Paid' | 'Part paid' | 'Unpaid' | 'Void'
+  note: string | null; created_by_name: string | null; created_at: string
+  voided_at: string | null; voided_by_name: string | null; void_reason: string | null
+  ms_purchase_items?: { id: number; product_id: number | null; product_name: string; quantity: number; unit_cost: number; line_total: number }[]
+}
+
+export type ExpenseRow = {
+  id: number; description: string; category: string; amount: number; date: string
+  paid_from: string; created_by_name: string | null; created_at: string
+}
