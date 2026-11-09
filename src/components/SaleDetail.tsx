@@ -3,7 +3,7 @@ import { supabase, refundSale } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import type { Transaction } from '../lib/types'
 import { Btn, ErrorBox, Field, Icon, ICONS, Modal, Spinner } from './ui'
-import { Receipt, type ReceiptData } from './Receipt'
+import { PrintButton, Receipt, type ReceiptData } from './Receipt'
 
 /** Shows a past sale as a receipt, with reprint, and refund for the owner. */
 export function SaleDetail({ txnId, onClose, onChanged }: { txnId: number; onClose: () => void; onChanged?: () => void }) {
@@ -63,7 +63,7 @@ export function SaleDetail({ txnId, onClose, onChanged }: { txnId: number; onClo
           ) : (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               {profile?.role === 'owner' && txn.status !== 'Refunded' && <Btn variant="danger" onClick={() => setRefunding(true)}>Refund</Btn>}
-              <Btn variant="ghost" onClick={() => window.print()}><Icon d={ICONS.printer} size={14} /> Print</Btn>
+              <PrintButton />
               <Btn onClick={onClose}>Close</Btn>
             </div>
           )}

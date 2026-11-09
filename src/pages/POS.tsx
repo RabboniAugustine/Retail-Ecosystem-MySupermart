@@ -5,7 +5,7 @@ import { cedi } from '../lib/format'
 import { createDisplaySender, openCustomerDisplay, type DisplayState } from '../lib/display'
 import type { Customer, Product } from '../lib/types'
 import { Btn, CATEGORY_COLORS, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner } from '../components/ui'
-import { Receipt, type ReceiptData } from '../components/Receipt'
+import { PrintButton, Receipt, type ReceiptData } from '../components/Receipt'
 
 type PosProduct = Product & { ms_inventory: { stock: number; reorder_level: number }[] | { stock: number; reorder_level: number } | null }
 type CartLine = { product: Product; qty: number; stock: number }
@@ -341,7 +341,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
             )}
             <Receipt data={receipt} settings={settings} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <Btn variant="ghost" onClick={() => window.print()}><Icon d={ICONS.printer} size={14} /> Print receipt</Btn>
+              <PrintButton label="Print receipt" />
               <Btn onClick={closeReceipt}>New sale</Btn>
             </div>
           </div>
