@@ -16,9 +16,10 @@ A web-based retail management system for a supermarket: point of sale, inventory
 
 ### Setting up the customer display (two screens, one computer)
 
-1. Sign in on the till and open **Point of Sale**.
-2. Click **Customer screen**. A new window opens.
-3. Drag that window onto the second monitor and **double-click it** (or press F11) for full screen.
+1. Connect the customer monitor and set Windows to **Extend these displays** (Windows key + P → Extend).
+2. Use **Chrome or Edge**. Sign in on the till and open **Point of Sale**.
+3. Click **Customer screen**. The first time, the browser asks to **manage windows on all your displays**: click **Allow**. If it says a pop-up was blocked, allow pop-ups for the site and click again.
+4. The display opens on the second monitor, filling it, and goes full screen. If the browser holds back full screen, the first tap or click on that screen switches it on.
 
 The two windows talk to each other directly inside the browser, so the display updates instantly and works even if the internet drops. Keep both windows in the same browser.
 

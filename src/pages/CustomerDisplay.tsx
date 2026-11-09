@@ -4,7 +4,7 @@ import { cedi } from '../lib/format'
 
 /**
  * Customer-facing screen. Opened from the POS ("Customer screen" button) and
- * dragged onto the second monitor; double-click for full screen.
+ * placed on the second monitor automatically (see openCustomerDisplay).
  * It shows exactly what the POS window sends, live, and reads no data itself.
  */
 
@@ -49,10 +49,25 @@ export function CustomerDisplay() {
     listRef.current?.querySelector('[data-last="true"]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [state, lastKey])
 
-  const goFullscreen = () => { document.documentElement.requestFullscreen?.().catch(() => {}) }
+  // Go full screen by itself when the browser allows it. Otherwise the first
+  // tap, click or key press anywhere on this screen does it.
+  const [isFull, setIsFull] = useState(!!document.fullscreenElement)
+  useEffect(() => {
+    const goFull = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}) }
+    const onChange = () => setIsFull(!!document.fullscreenElement)
+    goFull()
+    document.addEventListener('fullscreenchange', onChange)
+    window.addEventListener('pointerdown', goFull)
+    window.addEventListener('keydown', goFull)
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange)
+      window.removeEventListener('pointerdown', goFull)
+      window.removeEventListener('keydown', goFull)
+    }
+  }, [])
 
   return (
-    <div onDoubleClick={goFullscreen} style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: C.bg, color: C.text, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: C.bg, color: C.text, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2.4vh 3vw', borderBottom: `1px solid ${C.line}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
           <span style={{ width: '1.2vh', height: '1.2vh', background: C.green, borderRadius: 2 }} />
@@ -66,6 +81,11 @@ export function CustomerDisplay() {
       {state.mode === 'idle' && <Idle message={state.message} />}
       {state.mode === 'cart' && <Cart state={state} lastKey={lastKey} listRef={listRef} />}
       {state.mode === 'paid' && <Paid state={state} />}
+      {!isFull && (
+        <div style={{ position: 'fixed', bottom: '1.5vh', right: '2vw', fontSize: '1.6vh', color: C.faint, pointerEvents: 'none' }}>
+          Tap anywhere for full screen
+        </div>
+      )}
     </div>
   )
 }

@@ -59,8 +59,67 @@ export function listenToDisplay(onState: (s: DisplayState) => void) {
   return () => { ch?.close(); window.removeEventListener('storage', onStorage) }
 }
 
-export function openCustomerDisplay() {
-  const w = window.open('/display', 'mysupermart-customer-display', 'popup=yes,width=1024,height=700')
-  w?.focus()
-  return w
+// ── Opening the display on the second (extended) screen ───────────────────
+// Chrome and Edge can list all connected screens (Window Management API) after
+// the user allows "Manage windows on all your displays" once. We then open the
+// display window exactly over the second screen. Other browsers fall back to
+// placing it to the right of the current screen (the usual extended layout).
+
+type ScreenInfo = { left: number; top: number; width: number; height: number; isPrimary?: boolean; label?: string }
+type ScreenDetails = { screens: ScreenInfo[]; currentScreen: ScreenInfo }
+type WindowWithScreens = Window & { getScreenDetails?: () => Promise<ScreenDetails> }
+
+export type DisplayOpenResult =
+  | { ok: true; where: 'second-screen' | 'guessed' | 'same-screen'; screenName?: string }
+  | { ok: false; reason: 'popup-blocked' }
+
+async function findSecondScreen(): Promise<{ screen: ScreenInfo | null; detected: boolean }> {
+  const w = window as WindowWithScreens
+  if (!w.getScreenDetails) return { screen: null, detected: false }
+  try {
+    const details = await w.getScreenDetails()
+    const cur = details.currentScreen
+    const others = details.screens.filter(s => !(s.left === cur.left && s.top === cur.top && s.width === cur.width && s.height === cur.height))
+    // Prefer a screen that is not the primary one (usually the customer-facing monitor).
+    const pick = others.find(s => !s.isPrimary) ?? others[0] ?? null
+    return { screen: pick, detected: true }
+  } catch {
+    return { screen: null, detected: false } // permission refused or not supported
+  }
+}
+
+const DISPLAY_NAME = 'mysupermart-customer-display'
+
+/** Opens (or moves) the customer display onto the second screen, filling it. Call from a click. */
+export async function openCustomerDisplay(): Promise<DisplayOpenResult> {
+  const { screen: target, detected } = await findSecondScreen()
+
+  let rect: ScreenInfo
+  let where: 'second-screen' | 'guessed' | 'same-screen'
+  if (target) {
+    rect = target
+    where = 'second-screen'
+  } else if (detected) {
+    // Only one screen connected: open a normal window on this screen.
+    rect = { left: window.screenX + 40, top: window.screenY + 40, width: 1024, height: 700 }
+    where = 'same-screen'
+  } else {
+    // Cannot see the screens: assume the extended screen sits to the right.
+    const s = window.screen as Screen & { availLeft?: number; availTop?: number }
+    rect = { left: (s.availLeft ?? 0) + s.width, top: s.availTop ?? 0, width: s.availWidth, height: s.availHeight }
+    where = 'guessed'
+  }
+
+  const features = `popup=yes,left=${rect.left},top=${rect.top},width=${rect.width},height=${rect.height}` +
+    (where === 'same-screen' ? '' : ',fullscreen=yes')
+  const win = window.open('/display', DISPLAY_NAME, features)
+  if (!win) return { ok: false, reason: 'popup-blocked' }
+
+  // If the window was already open, move it onto the target screen and fill it.
+  try {
+    win.moveTo(rect.left, rect.top)
+    win.resizeTo(rect.width, rect.height)
+  } catch { /* the browser may not allow it */ }
+  win.focus()
+  return { ok: true, where, screenName: target?.label }
 }

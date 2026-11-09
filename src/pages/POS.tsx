@@ -36,6 +36,17 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
   const [error, setError] = useState('')
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const [displayMsg, setDisplayMsg] = useState<{ text: string; warn: boolean } | null>(null)
+
+  const showCustomerScreen = async () => {
+    setDisplayMsg({ text: 'Looking for the second screen…', warn: false })
+    const r = await openCustomerDisplay()
+    if (!r.ok) setDisplayMsg({ text: 'The browser blocked the window. Allow pop-ups for this site, then click Customer screen again.', warn: true })
+    else if (r.where === 'second-screen') setDisplayMsg({ text: `Customer screen opened on ${r.screenName || 'the second screen'}.`, warn: false })
+    else if (r.where === 'same-screen') setDisplayMsg({ text: 'Only one screen found. Connect the customer monitor, set Windows to "Extend these displays", then click again.', warn: true })
+    else setDisplayMsg({ text: 'Customer screen opened. If it is not on the second monitor, click "Allow" when the browser asks to manage windows, then click again.', warn: false })
+    setTimeout(() => setDisplayMsg(null), 8000)
+  }
 
   const loadProducts = async () => {
     const { data, error } = await supabase.from('ms_products')
@@ -191,8 +202,11 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
             <input ref={searchRef} autoFocus className="input-field" style={{ paddingLeft: 34 }} placeholder="Scan barcode or search, then Enter…"
               value={search} onChange={e => setSearch(e.target.value)} onKeyDown={onSearchKey} />
           </div>
-          <Btn variant="ghost" onClick={() => openCustomerDisplay()}><Icon d={ICONS.monitor} size={14} /> Customer screen</Btn>
+          <Btn variant="ghost" onClick={showCustomerScreen}><Icon d={ICONS.monitor} size={14} /> Customer screen</Btn>
         </div>
+        {displayMsg && (
+          <div style={{ fontSize: 12, color: displayMsg.warn ? '#f59e0b' : '#9ca3af', marginTop: -4 }}>{displayMsg.text}</div>
+        )}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setCategory(cat)} className="tab-btn"
