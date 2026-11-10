@@ -1,0 +1,300 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --font-sans: 'DM Sans', sans-serif;
+  --font-serif: 'Roboto Slab', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Theme colours ─────────────────────────────────────────────────────────
+   Dark (original) and Light (black, white and red). The chosen theme is set
+   as <html data-theme="light|dark"> by src/lib/theme.ts. */
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-bg: #06080f;
+  --c-panel: #0d1120;
+  --c-panel-2: #111827;
+  --c-muted: #141c2e;
+  --c-ink: #ffffff;          /* lines and soft fills are this colour at low opacity */
+  --c-text: #e8ecf4;
+  --c-text-2: #9ca3af;
+  --c-text-3: #6b7280;
+  --c-text-4: #4b5563;
+  --c-accent: #00d46a;
+  --c-accent-2: #009f50;
+  --c-on-accent: #03120a;
+  --c-good: #00d46a;         /* positive values: money in, paid, in stock */
+  --c-danger: #ef4444;
+  --c-warn: #f59e0b;
+  --c-info: #3b82f6;
+  --c-purple: #a855f7;
+  --c-cyan: #06b6d4;
+  --c-shadow: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --c-bg: #f4f4f4;
+  --c-panel: #ffffff;
+  --c-panel-2: #ffffff;
+  --c-muted: #ececec;
+  --c-ink: #000000;
+  --c-text: #0a0a0a;
+  --c-text-2: #3d3d3d;
+  --c-text-3: #6b6b6b;
+  --c-text-4: #9a9a9a;
+  --c-accent: #d0021b;
+  --c-accent-2: #a30015;
+  --c-on-accent: #ffffff;
+  --c-good: #0a0a0a;
+  --c-danger: #d0021b;
+  --c-warn: #0a0a0a;
+  --c-info: #0a0a0a;
+  --c-purple: #0a0a0a;
+  --c-cyan: #0a0a0a;
+  --c-shadow: rgba(0, 0, 0, 0.12);
+  --c-cat-dot: #b3b3b3;      /* category markers: one neutral grey */
+  --c-stat-icon: #0a0a0a;    /* summary card icons in black */
+  --c-glow: transparent;     /* no coloured glow behind the sign-in box */
+}
+
+:root {
+  --background: var(--c-bg);
+  --foreground: var(--c-text);
+  --card: var(--c-panel);
+  --card-foreground: var(--c-text);
+  --primary: var(--c-accent);
+  --primary-foreground: var(--c-on-accent);
+  --secondary: var(--c-panel-2);
+  --secondary-foreground: var(--c-text-2);
+  --muted: var(--c-muted);
+  --muted-foreground: var(--c-text-3);
+  --accent: var(--c-accent);
+  --accent-foreground: var(--c-on-accent);
+  --border: color-mix(in srgb, var(--c-ink) 7%, transparent);
+  --ring: var(--c-accent);
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--c-ink) 12%, transparent); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--c-ink) 22%, transparent); }
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sidebar-link:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.sidebar-link.active {
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
+  color: var(--primary);
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 0.15s;
+}
+.stat-card:hover {
+  border-color: color-mix(in srgb, var(--c-accent) 25%, transparent);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.03em;
+}
+.badge-green { background: color-mix(in srgb, var(--c-good) 12%, transparent); color: var(--c-good); }
+.badge-yellow { background: color-mix(in srgb, var(--c-warn) 15%, transparent); color: var(--c-warn); }
+.badge-red { background: color-mix(in srgb, var(--c-danger) 15%, transparent); color: var(--c-danger); }
+.badge-blue { background: color-mix(in srgb, var(--c-info) 15%, transparent); color: var(--c-info); }
+.badge-gray { background: color-mix(in srgb, var(--c-text-3) 15%, transparent); color: var(--c-text-2); }
+
+.table-row:hover td {
+  background: color-mix(in srgb, var(--c-ink) 2.5%, transparent);
+}
+
+.progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--muted);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--primary);
+  transition: width 0.4s ease;
+}
+
+.tab-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.tab-btn:hover { color: var(--foreground); }
+.tab-btn.active {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.pos-key {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  user-select: none;
+}
+.pos-key:hover {
+  background: var(--muted);
+  border-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
+  color: var(--primary);
+}
+.pos-key:active { transform: scale(0.96); }
+
+.input-field {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--foreground);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 9px 12px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.input-field:focus {
+  border-color: color-mix(in srgb, var(--c-accent) 50%, transparent);
+}
+.input-field::placeholder { color: var(--muted-foreground); }
+
+/* ── Layout helpers (collapse on small screens) ─────────────────────────── */
+.g2, .g3, .g4, .g-split, .g-split-r { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g-split { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+.g-split-r { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+.table-wrap { overflow-x: auto; }
+.table-wrap table { width: 100%; border-collapse: collapse; }
+
+@media (max-width: 1100px) {
+  .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-split, .g-split-r { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .g2, .g3, .g4 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* POS: products + order side by side, stacked on narrow screens */
+.pos-grid { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 16px; height: calc(100vh - 96px); }
+.pos-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; overflow-y: auto; padding-right: 2px; align-content: start; }
+@media (max-width: 900px) {
+  .pos-grid { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .pos-products { max-height: 50vh; }
+}
+
+/* Sidebar becomes a slide-in drawer on phones */
+.shell-sidebar { transition: width 0.18s ease, transform 0.18s ease; }
+.shell-menu-btn { display: none; }
+@media (max-width: 760px) {
+  .shell-sidebar { position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; width: 230px !important; transform: translateX(-100%); }
+  .shell-sidebar.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+  .shell-menu-btn { display: flex; }
+  .shell-collapse { display: none; }
+  .shell-content { padding: 14px !important; }
+}
+
+/* Printing: the receipt by default; a report when body has .printing-report */
+.receipt-print, .report-print { display: none; }
+@media print {
+  /* Page size and width for receipts are set by printReceipt() for 58 mm or 80 mm paper. */
+  @page { size: 58mm auto; margin: 0; }
+  body * { visibility: hidden !important; }
+  html, body, #root { background: #fff !important; height: auto; }
+
+  body:not(.printing-report) .receipt-print, body:not(.printing-report) .receipt-print * { visibility: visible !important; }
+  body:not(.printing-report) .receipt-print {
+    display: block !important; position: absolute; left: 0; top: 0;
+    width: 58mm; padding: 3mm 5mm 6mm; box-sizing: border-box;
+    color: #000; background: #fff; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 9px; line-height: 1.35;
+  }
+
+  body.printing-report .report-print, body.printing-report .report-print * { visibility: visible !important; }
+  body.printing-report .report-print {
+    display: block !important; position: absolute; left: 0; top: 0; width: 100%;
+    color: #000; background: #fff; font-family: 'DM Sans', Arial, sans-serif;
+  }
+  body.printing-report #root { display: none !important; }
+}
+
+/* Light theme: cards get a hairline border instead of glow, softer hovers */
+:root[data-theme="light"] .stat-card { box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+:root[data-theme="light"] .badge { font-weight: 600; }
