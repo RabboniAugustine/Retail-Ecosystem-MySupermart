@@ -47,40 +47,40 @@ export const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export const TS = {
-  backgroundColor: '#0d1120',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 8, color: '#e8ecf4', fontSize: 12,
+  backgroundColor: 'var(--c-panel)',
+  border: '1px solid color-mix(in srgb, var(--c-ink) 10%, transparent)',
+  borderRadius: 8, color: 'var(--c-text)', fontSize: 12,
 }
 
 // ── Primitives ─────────────────────────────────────────────────────────────
 
-export function StatCard({ label, value, sub, trend, color = '#00d46a', icon }: {
+export function StatCard({ label, value, sub, trend, color = 'var(--c-accent)', icon }: {
   label: string; value: string; sub?: string; trend?: string; color?: string; icon: string
 }) {
   const up = trend?.startsWith('+')
   return (
     <div className="stat-card">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 9, background: `${color}18`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 38, height: 38, borderRadius: 9, background: `color-mix(in srgb, var(--c-stat-icon, ${color}) 10%, transparent)`, color: `var(--c-stat-icon, ${color})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon d={ICONS[icon]} size={17} />
         </div>
         {trend && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: up ? '#00d46a' : '#ef4444', background: up ? 'rgba(0,212,106,0.1)' : 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: up ? 'var(--c-good)' : 'var(--c-danger)', background: up ? 'color-mix(in srgb, var(--c-accent) 10%, transparent)' : 'color-mix(in srgb, var(--c-danger) 10%, transparent)', padding: '2px 6px', borderRadius: 4 }}>
             {trend}
           </span>
         )}
       </div>
-      <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Roboto Slab, serif', color: '#e8ecf4', letterSpacing: '-0.5px' }}>{value}</div>
-      <div style={{ fontSize: 13, color: '#6b7280', marginTop: 3 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: '#4b5563', marginTop: 3 }}>{sub}</div>}
+      <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Roboto Slab, serif', color: 'var(--c-text)', letterSpacing: '-0.5px' }}>{value}</div>
+      <div style={{ fontSize: 13, color: 'var(--c-text-3)', marginTop: 3 }}>{label}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--c-text-4)', marginTop: 3 }}>{sub}</div>}
     </div>
   )
 }
 
 export function Spinner() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60, color: '#6b7280', flexDirection: 'column', gap: 12 }}>
-      <div style={{ width: 26, height: 26, border: '2.5px solid rgba(0,212,106,0.15)', borderTopColor: '#00d46a', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60, color: 'var(--c-text-3)', flexDirection: 'column', gap: 12 }}>
+      <div style={{ width: 26, height: 26, border: '2.5px solid color-mix(in srgb, var(--c-accent) 15%, transparent)', borderTopColor: 'var(--c-accent)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -88,9 +88,9 @@ export function Spinner() {
 
 export function EmptyState({ title, sub, action }: { icon?: string; title: string; sub?: string; action?: React.ReactNode }) {
   return (
-    <div style={{ textAlign: 'center', padding: '48px 0', color: '#4b5563', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <div style={{ width: 12, height: 12, borderRadius: '50%', border: '1.5px solid #374151', marginBottom: 6 }} />
-      <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af' }}>{title}</div>
+    <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--c-text-4)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 12, height: 12, borderRadius: '50%', border: '1.5px solid var(--c-text-4)', marginBottom: 6 }} />
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--c-text-2)' }}>{title}</div>
       {sub && <div style={{ fontSize: 13 }}>{sub}</div>}
       {action}
     </div>
@@ -100,10 +100,10 @@ export function EmptyState({ title, sub, action }: { icon?: string; title: strin
 export function Modal({ title, onClose, children, width = 520 }: { title: string; onClose: () => void; children: React.ReactNode; width?: number }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: '#0d1120', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, width: `min(${width}px, calc(100vw - 24px))`, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <h2 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 17, fontWeight: 700, margin: 0, color: '#e8ecf4' }}>{title}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex' }}>
+      <div style={{ background: 'var(--c-panel)', border: '1px solid color-mix(in srgb, var(--c-ink) 10%, transparent)', borderRadius: 14, width: `min(${width}px, calc(100vw - 24px))`, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px var(--c-shadow)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid color-mix(in srgb, var(--c-ink) 6%, transparent)' }}>
+          <h2 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--c-text)' }}>{title}</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--c-text-3)', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex' }}>
             <Icon d={ICONS.x} size={18} />
           </button>
         </div>
@@ -116,7 +116,7 @@ export function Modal({ title, onClose, children, width = 520 }: { title: string
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
       {children}
     </div>
   )
@@ -127,9 +127,9 @@ export function Btn({ children, onClick, variant = 'primary', type = 'button', d
   type?: 'button' | 'submit'; disabled?: boolean
 }) {
   const styles: Record<string, React.CSSProperties> = {
-    primary: { background: '#00d46a', color: '#03120a', border: 'none' },
-    ghost: { background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.08)' },
-    danger: { background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' },
+    primary: { background: 'var(--c-accent)', color: 'var(--c-on-accent)', border: 'none' },
+    ghost: { background: 'color-mix(in srgb, var(--c-ink) 6%, transparent)', color: 'var(--c-text-2)', border: '1px solid color-mix(in srgb, var(--c-ink) 8%, transparent)' },
+    danger: { background: 'color-mix(in srgb, var(--c-danger) 12%, transparent)', color: 'var(--c-danger)', border: '1px solid color-mix(in srgb, var(--c-danger) 20%, transparent)' },
   }
   return (
     <button type={type} onClick={onClick} disabled={disabled}
@@ -142,7 +142,7 @@ export function Btn({ children, onClick, variant = 'primary', type = 'button', d
 export function ErrorBox({ children }: { children: React.ReactNode }) {
   if (!children) return null
   return (
-    <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
+    <div style={{ background: 'color-mix(in srgb, var(--c-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--c-danger) 35%, transparent)', color: 'var(--c-danger)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
       {children}
     </div>
   )
@@ -151,14 +151,14 @@ export function ErrorBox({ children }: { children: React.ReactNode }) {
 export function SectionTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-      <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: 0, color: '#e8ecf4' }}>{children}</h3>
+      <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--c-text)' }}>{children}</h3>
       {right}
     </div>
   )
 }
 
 export function Th({ children, right }: { children?: React.ReactNode; right?: boolean }) {
-  return <th style={{ textAlign: right ? 'right' : 'left', padding: '7px 10px', fontSize: 10, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{children}</th>
+  return <th style={{ textAlign: right ? 'right' : 'left', padding: '7px 10px', fontSize: 10, color: 'var(--c-text-4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{children}</th>
 }
 
 export function Td({ children, mono, strong, muted, right, style }: {
@@ -168,7 +168,7 @@ export function Td({ children, mono, strong, muted, right, style }: {
     <td style={{
       padding: '10px 10px', fontSize: mono ? 12 : 13, textAlign: right ? 'right' : 'left',
       fontFamily: mono ? 'JetBrains Mono, monospace' : undefined, fontWeight: strong ? 600 : 400,
-      color: strong ? '#e8ecf4' : muted ? '#6b7280' : '#9ca3af', whiteSpace: 'nowrap', ...style,
+      color: strong ? 'var(--c-text)' : muted ? 'var(--c-text-3)' : 'var(--c-text-2)', whiteSpace: 'nowrap', ...style,
     }}>{children}</td>
   )
 }

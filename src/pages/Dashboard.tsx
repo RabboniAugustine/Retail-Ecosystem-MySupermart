@@ -64,18 +64,18 @@ export function Dashboard({ refresh }: { refresh: number }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 22, fontWeight: 700, color: '#e8ecf4', margin: 0 }}>Owner overview</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 3 }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <h1 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 22, fontWeight: 700, color: 'var(--c-text)', margin: 0 }}>Owner overview</h1>
+          <p style={{ color: 'var(--c-text-3)', fontSize: 13, marginTop: 3 }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
       </div>
 
       {loading ? <Spinner /> : (
         <>
           <div className="g4">
-            <StatCard label="Today's revenue" value={cedi(todayRevenue)} sub={`${todayTxns.length} sales${refundsToday ? ` · ${refundsToday} refunded` : ''}`} trend={trend} icon="pos" color="#00d46a" />
-            <StatCard label="Today's gross profit" value={cedi(todayProfit)} sub="Sales before VAT minus cost of goods" icon="accounting" color="#3b82f6" />
-            <StatCard label="Average sale today" value={todayTxns.length ? cedi(todayRevenue / todayTxns.length) : '—'} sub="Per customer" icon="trending" color="#a855f7" />
-            <StatCard label="Stock alerts" value={alerts.length.toString()} sub={`${alerts.filter(a => a.stock <= 0).length} out of stock`} icon="alert" color={alerts.some(a => a.stock <= 0) ? '#ef4444' : '#f59e0b'} />
+            <StatCard label="Today's revenue" value={cedi(todayRevenue)} sub={`${todayTxns.length} sales${refundsToday ? ` · ${refundsToday} refunded` : ''}`} trend={trend} icon="pos" color="var(--c-accent)" />
+            <StatCard label="Today's gross profit" value={cedi(todayProfit)} sub="Sales before VAT minus cost of goods" icon="accounting" color="var(--c-info)" />
+            <StatCard label="Average sale today" value={todayTxns.length ? cedi(todayRevenue / todayTxns.length) : '—'} sub="Per customer" icon="trending" color="var(--c-purple)" />
+            <StatCard label="Stock alerts" value={alerts.length.toString()} sub={`${alerts.filter(a => a.stock <= 0).length} out of stock`} icon="alert" color={alerts.some(a => a.stock <= 0) ? 'var(--c-danger)' : 'var(--c-warn)'} />
           </div>
 
           <div className="g-split">
@@ -85,15 +85,15 @@ export function Dashboard({ refresh }: { refresh: number }) {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00d46a" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#00d46a" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--c-accent)" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="var(--c-accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                  <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} interval={1} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₵${v}`} width={56} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--c-ink) 4%, transparent)" />
+                  <XAxis dataKey="day" tick={{ fill: 'var(--c-text-3)', fontSize: 10 }} axisLine={false} tickLine={false} interval={1} />
+                  <YAxis tick={{ fill: 'var(--c-text-3)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₵${v}`} width={56} />
                   <Tooltip contentStyle={TS} formatter={cediTip('Sales')} />
-                  <Area type="monotone" dataKey="sales" stroke="#00d46a" strokeWidth={2} fill="url(#sg)" dot={{ fill: '#00d46a', r: 2 }} />
+                  <Area type="monotone" dataKey="sales" stroke="var(--c-accent)" strokeWidth={2} fill="url(#sg)" dot={{ fill: 'var(--c-accent)', r: 2 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -105,19 +105,19 @@ export function Dashboard({ refresh }: { refresh: number }) {
                   {byStaff.map(s => (
                     <div key={s.name}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                        <span style={{ color: '#e8ecf4', fontWeight: 500 }}>{s.name} <span style={{ color: '#4b5563', fontSize: 11 }}>{s.count} sales</span></span>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#00d46a', fontWeight: 600 }}>{cedi(s.total)}</span>
+                        <span style={{ color: 'var(--c-text)', fontWeight: 500 }}>{s.name} <span style={{ color: 'var(--c-text-4)', fontSize: 11 }}>{s.count} sales</span></span>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-accent)', fontWeight: 600 }}>{cedi(s.total)}</span>
                       </div>
                       <div className="progress-bar"><div className="progress-fill" style={{ width: `${(s.total / byStaff[0].total) * 100}%` }} /></div>
                     </div>
                   ))}
                 </div>
               )}
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 16, paddingTop: 12, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              <div style={{ borderTop: '1px solid color-mix(in srgb, var(--c-ink) 6%, transparent)', marginTop: 16, paddingTop: 12, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                 {byMethod.map(x => (
                   <div key={x.m}>
-                    <div style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{x.m}</div>
-                    <div style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', color: '#e8ecf4', fontWeight: 600 }}>{cedi(x.total, 0)}</div>
+                    <div style={{ fontSize: 10, color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{x.m}</div>
+                    <div style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-text)', fontWeight: 600 }}>{cedi(x.total, 0)}</div>
                   </div>
                 ))}
               </div>
@@ -126,7 +126,7 @@ export function Dashboard({ refresh }: { refresh: number }) {
 
           <div className="g-split">
             <div className="stat-card">
-              <SectionTitle right={<span style={{ fontSize: 12, color: '#4b5563' }}>Last 10</span>}>Recent sales</SectionTitle>
+              <SectionTitle right={<span style={{ fontSize: 12, color: 'var(--c-text-4)' }}>Last 10</span>}>Recent sales</SectionTitle>
               {txns.length === 0 ? <EmptyState title="No sales yet" sub="Complete your first sale in Point of Sale" /> : (
                 <div className="table-wrap">
                   <table>
@@ -153,12 +153,12 @@ export function Dashboard({ refresh }: { refresh: number }) {
               {alerts.length === 0 ? <EmptyState title="All stock levels healthy" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   {alerts.slice(0, 8).map(r => (
-                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: r.stock <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)', border: `1px solid ${r.stock <= 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}` }}>
-                      <span style={{ fontSize: 13, color: '#e8ecf4', fontWeight: 500 }}>{r.ms_products?.name}</span>
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: r.stock <= 0 ? 'color-mix(in srgb, var(--c-danger) 7%, transparent)' : 'color-mix(in srgb, var(--c-warn) 7%, transparent)', border: `1px solid ${r.stock <= 0 ? 'color-mix(in srgb, var(--c-danger) 15%, transparent)' : 'color-mix(in srgb, var(--c-warn) 15%, transparent)'}` }}>
+                      <span style={{ fontSize: 13, color: 'var(--c-text)', fontWeight: 500 }}>{r.ms_products?.name}</span>
                       <span className={`badge ${r.stock <= 0 ? 'badge-red' : 'badge-yellow'}`}>{r.stock <= 0 ? 'OUT' : `${r.stock} left`}</span>
                     </div>
                   ))}
-                  {alerts.length > 8 && <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 6 }}><Icon d={ICONS.alert} size={12} /> {alerts.length - 8} more in Inventory → Low stock</div>}
+                  {alerts.length > 8 && <div style={{ fontSize: 12, color: 'var(--c-text-3)', display: 'flex', alignItems: 'center', gap: 6 }}><Icon d={ICONS.alert} size={12} /> {alerts.length - 8} more in Inventory → Low stock</div>}
                 </div>
               )}
             </div>

@@ -11,7 +11,7 @@ export function RangePicker({ preset, range, onChange }: {
       </select>
       <input className="input-field" type="date" value={range.from} max={range.to} style={{ width: 150, padding: '7px 10px' }}
         onChange={e => e.target.value && onChange('custom', { ...range, from: e.target.value })} />
-      <span style={{ color: '#4b5563', fontSize: 12 }}>to</span>
+      <span style={{ color: 'var(--c-text-4)', fontSize: 12 }}>to</span>
       <input className="input-field" type="date" value={range.to} min={range.from} style={{ width: 150, padding: '7px 10px' }}
         onChange={e => e.target.value && onChange('custom', { ...range, to: e.target.value })} />
     </div>

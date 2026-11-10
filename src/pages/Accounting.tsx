@@ -75,17 +75,17 @@ export function Accounting({ refresh }: { refresh: number }) {
 
       {isOwner && balances && (
         <div className="g4">
-          <StatCard label="Cash" value={cedi(balances.Cash)} sub="Cash drawer / safe" icon="accounting" color="#00d46a" />
-          <StatCard label="Bank" value={cedi(balances.Bank)} sub="Card sales and bank payments" icon="accounting" color="#3b82f6" />
-          <StatCard label="Mobile Money" value={cedi(balances['Mobile Money'])} sub="MoMo wallet" icon="accounting" color="#a855f7" />
-          <StatCard label="Owed to suppliers" value={cedi(owed)} sub="Unpaid purchases" icon="suppliers" color="#ef4444" />
+          <StatCard label="Cash" value={cedi(balances.Cash)} sub="Cash drawer / safe" icon="accounting" color="var(--c-accent)" />
+          <StatCard label="Bank" value={cedi(balances.Bank)} sub="Card sales and bank payments" icon="accounting" color="var(--c-info)" />
+          <StatCard label="Mobile Money" value={cedi(balances['Mobile Money'])} sub="MoMo wallet" icon="accounting" color="var(--c-purple)" />
+          <StatCard label="Owed to suppliers" value={cedi(owed)} sub="Unpaid purchases" icon="suppliers" color="var(--c-danger)" />
         </div>
       )}
 
       <div className="g3">
-        <StatCard label="Purchases" value={cedi(purchTotal)} sub={`${live.length} in ${rangeLabel(range)}`} icon="inventory" color="#06b6d4" />
-        <StatCard label="Still to pay" value={cedi(purchDue)} sub="On these purchases" icon="alert" color="#f59e0b" />
-        <StatCard label="Expenses" value={cedi(expTotal)} sub={`${expenses.length} in ${rangeLabel(range)}`} icon="receipt" color="#ef4444" />
+        <StatCard label="Purchases" value={cedi(purchTotal)} sub={`${live.length} in ${rangeLabel(range)}`} icon="inventory" color="var(--c-cyan)" />
+        <StatCard label="Still to pay" value={cedi(purchDue)} sub="On these purchases" icon="alert" color="var(--c-warn)" />
+        <StatCard label="Expenses" value={cedi(expTotal)} sub={`${expenses.length} in ${rangeLabel(range)}`} icon="receipt" color="var(--c-danger)" />
       </div>
 
       <ErrorBox>{error}</ErrorBox>
@@ -94,7 +94,7 @@ export function Accounting({ refresh }: { refresh: number }) {
         <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
           {([['purchases', `Purchases (${purchases.length})`], ['expenses', `Expenses (${expenses.length})`]] as const).map(([k, l]) => (
             <button key={k} className="tab-btn" onClick={() => setTab(k)}
-              style={{ background: tab === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: tab === k ? '#00d46a' : '#6b7280' }}>{l}</button>
+              style={{ background: tab === k ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: tab === k ? 'var(--c-accent)' : 'var(--c-text-3)' }}>{l}</button>
           ))}
         </div>
         {loading ? <Spinner /> : tab === 'purchases' ? (
@@ -132,9 +132,9 @@ export function Accounting({ refresh }: { refresh: number }) {
                       <Td strong style={{ whiteSpace: 'normal' }}>{e.description}</Td>
                       <Td><span className="badge badge-blue">{e.category}</span></Td>
                       <Td>{e.paid_from}</Td>
-                      <Td mono strong right style={{ color: '#ef4444' }}>{cedi(e.amount)}</Td>
+                      <Td mono strong right style={{ color: 'var(--c-danger)' }}>{cedi(e.amount)}</Td>
                       <Td>{e.created_by_name ?? '—'}</Td>
-                      {isOwner && <Td><button onClick={() => deleteExpense(e)} title="Delete" style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.trash} size={14} /></button></Td>}
+                      {isOwner && <Td><button onClick={() => deleteExpense(e)} title="Delete" style={{ background: 'none', border: 'none', color: 'var(--c-text-4)', cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.trash} size={14} /></button></Td>}
                     </tr>
                   ))}
                 </tbody>
@@ -243,11 +243,11 @@ function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
             <input ref={searchRef} className="input-field" value={term} onChange={e => setTerm(e.target.value)} onKeyDown={onKey} placeholder="Name, SKU or barcode" autoFocus />
           </Field>
           {matches.length > 0 && (
-            <div style={{ position: 'absolute', zIndex: 5, left: 0, right: 0, top: '100%', marginTop: 4, background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden', boxShadow: '0 12px 30px rgba(0,0,0,0.5)' }}>
+            <div style={{ position: 'absolute', zIndex: 5, left: 0, right: 0, top: '100%', marginTop: 4, background: 'var(--c-panel-2)', border: '1px solid color-mix(in srgb, var(--c-ink) 10%, transparent)', borderRadius: 8, overflow: 'hidden', boxShadow: '0 12px 30px rgba(0,0,0,0.5)' }}>
               {matches.map(p => (
-                <button key={p.id} onClick={() => add(p)} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#e8ecf4', cursor: 'pointer', fontSize: 13, textAlign: 'left' }}>
-                  <span>{p.name} <span style={{ color: '#6b7280', fontSize: 11 }}>{p.sku ?? ''}</span></span>
-                  <span style={{ color: '#6b7280', fontSize: 12 }}>stock {p.stock} · cost {cedi(p.cost)}</span>
+                <button key={p.id} onClick={() => add(p)} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderBottom: '1px solid color-mix(in srgb, var(--c-ink) 5%, transparent)', color: 'var(--c-text)', cursor: 'pointer', fontSize: 13, textAlign: 'left' }}>
+                  <span>{p.name} <span style={{ color: 'var(--c-text-3)', fontSize: 11 }}>{p.sku ?? ''}</span></span>
+                  <span style={{ color: 'var(--c-text-3)', fontSize: 12 }}>stock {p.stock} · cost {cedi(p.cost)}</span>
                 </button>
               ))}
             </div>
@@ -255,7 +255,7 @@ function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
         </div>
 
         {lines.length === 0 ? (
-          <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: 16, border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 8 }}>
+          <div style={{ fontSize: 13, color: 'var(--c-text-3)', textAlign: 'center', padding: 16, border: '1px dashed color-mix(in srgb, var(--c-ink) 8%, transparent)', borderRadius: 8 }}>
             No items yet. New products must first be added in Inventory.
           </div>
         ) : (
@@ -271,7 +271,7 @@ function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
                     <Td><input className="input-field" style={{ ...inputSm, width: 90 }} type="number" min={0} step="0.01" value={l.cost} onChange={e => setLine(l.product.id, { cost: e.target.value })} /></Td>
                     <Td><input className="input-field" style={{ ...inputSm, width: 100 }} type="number" min={0} step="0.01" value={l.newPrice} placeholder={String(Number(l.product.price))} onChange={e => setLine(l.product.id, { newPrice: e.target.value })} /></Td>
                     <Td mono strong right>{cedi((Number(l.qty) || 0) * (Number(l.cost) || 0))}</Td>
-                    <Td><button onClick={() => setLines(prev => prev.filter(x => x.product.id !== l.product.id))} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex' }} aria-label="Remove"><Icon d={ICONS.x} size={13} /></button></Td>
+                    <Td><button onClick={() => setLines(prev => prev.filter(x => x.product.id !== l.product.id))} style={{ background: 'none', border: 'none', color: 'var(--c-text-3)', cursor: 'pointer', display: 'flex' }} aria-label="Remove"><Icon d={ICONS.x} size={13} /></button></Td>
                   </tr>
                 ))}
               </tbody>
@@ -279,9 +279,9 @@ function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 12 }}>
-          <span style={{ color: '#9ca3af', fontSize: 13 }}>{lines.length} items · {lines.reduce((s, l) => s + (Number(l.qty) || 0), 0)} units</span>
-          <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'Roboto Slab, serif', color: '#e8ecf4' }}>Total {cedi(total)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: '1px solid color-mix(in srgb, var(--c-ink) 7%, transparent)', paddingTop: 12 }}>
+          <span style={{ color: 'var(--c-text-2)', fontSize: 13 }}>{lines.length} items · {lines.reduce((s, l) => s + (Number(l.qty) || 0), 0)} units</span>
+          <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'Roboto Slab, serif', color: 'var(--c-text)' }}>Total {cedi(total)}</span>
         </div>
 
         <div className="g3">
@@ -294,7 +294,7 @@ function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           </Field>
           {payMode === 'part'
             ? <Field label="Amount paid now (₵)"><input className="input-field" type="number" min={0} step="0.01" value={paid} onChange={e => setPaid(e.target.value)} /></Field>
-            : <Field label="Amount paid now"><div style={{ padding: '10px 0', fontSize: 14, color: '#e8ecf4', fontFamily: 'JetBrains Mono, monospace' }}>{cedi(paidNum)}</div></Field>}
+            : <Field label="Amount paid now"><div style={{ padding: '10px 0', fontSize: 14, color: 'var(--c-text)', fontFamily: 'JetBrains Mono, monospace' }}>{cedi(paidNum)}</div></Field>}
           {payMode !== 'credit' && (
             <Field label="Paid from">
               <select className="input-field" value={account} onChange={e => setAccount(e.target.value as Account)}>
@@ -303,9 +303,9 @@ function AddPurchase({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
             </Field>
           )}
         </div>
-        {paidNum < total && total > 0 && <div style={{ fontSize: 12, color: '#f59e0b' }}>{cedi(total - paidNum)} will be added to what you owe {suppliers.find(s => String(s.id) === supplierId)?.name ?? 'the supplier'}.</div>}
+        {paidNum < total && total > 0 && <div style={{ fontSize: 12, color: 'var(--c-warn)' }}>{cedi(total - paidNum)} will be added to what you owe {suppliers.find(s => String(s.id) === supplierId)?.name ?? 'the supplier'}.</div>}
         <Field label="Note"><input className="input-field" value={note} onChange={e => setNote(e.target.value)} placeholder="Optional" /></Field>
-        <div style={{ fontSize: 12, color: '#6b7280' }}>Saving adds the quantities to stock and updates each item's cost price (and selling price, if you entered a new one).</div>
+        <div style={{ fontSize: 12, color: 'var(--c-text-3)' }}>Saving adds the quantities to stock and updates each item's cost price (and selling price, if you entered a new one).</div>
         <ErrorBox>{error}</ErrorBox>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
@@ -346,11 +346,11 @@ function PurchaseDetail({ id, onClose, onChanged }: { id: number; onClose: () =>
       {!p ? <Spinner /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 16px', fontSize: 13 }}>
-            <span style={{ color: '#6b7280' }}>Supplier</span><span style={{ color: '#e8ecf4' }}>{p.supplier_name ?? '—'}</span>
-            <span style={{ color: '#6b7280' }}>Date</span><span>{p.purchase_date}{p.invoice_no ? ` · Invoice ${p.invoice_no}` : ''}</span>
-            <span style={{ color: '#6b7280' }}>Recorded by</span><span>{p.created_by_name ?? '—'}</span>
-            {p.note && <><span style={{ color: '#6b7280' }}>Note</span><span>{p.note}</span></>}
-            <span style={{ color: '#6b7280' }}>Status</span><span><span className={purchaseBadge(p.status)}>{p.status}</span></span>
+            <span style={{ color: 'var(--c-text-3)' }}>Supplier</span><span style={{ color: 'var(--c-text)' }}>{p.supplier_name ?? '—'}</span>
+            <span style={{ color: 'var(--c-text-3)' }}>Date</span><span>{p.purchase_date}{p.invoice_no ? ` · Invoice ${p.invoice_no}` : ''}</span>
+            <span style={{ color: 'var(--c-text-3)' }}>Recorded by</span><span>{p.created_by_name ?? '—'}</span>
+            {p.note && <><span style={{ color: 'var(--c-text-3)' }}>Note</span><span>{p.note}</span></>}
+            <span style={{ color: 'var(--c-text-3)' }}>Status</span><span><span className={purchaseBadge(p.status)}>{p.status}</span></span>
           </div>
           {p.status === 'Void' && <ErrorBox>Voided by {p.voided_by_name} — {p.void_reason}</ErrorBox>}
           <div className="table-wrap">
@@ -364,9 +364,9 @@ function PurchaseDetail({ id, onClose, onChanged }: { id: number; onClose: () =>
             </table>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 20, fontSize: 13 }}>
-            <span>Total <b style={{ color: '#e8ecf4' }}>{cedi(p.total)}</b></span>
-            <span>Paid <b style={{ color: '#00d46a' }}>{cedi(p.amount_paid)}</b></span>
-            {p.status !== 'Void' && <span>Owed <b style={{ color: due > 0 ? '#ef4444' : '#9ca3af' }}>{cedi(due)}</b></span>}
+            <span>Total <b style={{ color: 'var(--c-text)' }}>{cedi(p.total)}</b></span>
+            <span>Paid <b style={{ color: 'var(--c-good)' }}>{cedi(p.amount_paid)}</b></span>
+            {p.status !== 'Void' && <span>Owed <b style={{ color: due > 0 ? 'var(--c-danger)' : 'var(--c-text-2)' }}>{cedi(due)}</b></span>}
           </div>
 
           {mode === 'pay' && (
@@ -378,7 +378,7 @@ function PurchaseDetail({ id, onClose, onChanged }: { id: number; onClose: () =>
           )}
           {mode === 'void' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>Voiding takes these items back out of stock, cancels what is owed and removes its payments from the accounts. Use it only for a purchase entered by mistake.</div>
+              <div style={{ fontSize: 12, color: 'var(--c-text-2)' }}>Voiding takes these items back out of stock, cancels what is owed and removes its payments from the accounts. Use it only for a purchase entered by mistake.</div>
               <Field label="Reason *"><input autoFocus className="input-field" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. entered twice" /></Field>
             </div>
           )}
@@ -474,12 +474,12 @@ function MoneyEntry({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   return (
     <Modal title="Money in / out" onClose={onClose} width={480}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', gap: 4, background: '#06080f', padding: 4, borderRadius: 8 }}>
+        <div style={{ display: 'flex', gap: 4, background: 'var(--c-bg)', padding: 4, borderRadius: 8 }}>
           {([['transfer', 'Transfer'], ['money_in', 'Money in'], ['money_out', 'Money out']] as const).map(([k, l]) => (
-            <button key={k} className="tab-btn" onClick={() => setKind(k)} style={{ flex: 1, background: kind === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: kind === k ? '#00d46a' : '#6b7280' }}>{l}</button>
+            <button key={k} className="tab-btn" onClick={() => setKind(k)} style={{ flex: 1, background: kind === k ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: kind === k ? 'var(--c-accent)' : 'var(--c-text-3)' }}>{l}</button>
           ))}
         </div>
-        <div style={{ fontSize: 12, color: '#6b7280' }}>{hint}</div>
+        <div style={{ fontSize: 12, color: 'var(--c-text-3)' }}>{hint}</div>
         <div className="g2">
           {kind !== 'money_in' && <Field label="From"><select className="input-field" value={from} onChange={e => setFrom(e.target.value as Account)}>{ACCOUNTS.map(a => <option key={a}>{a}</option>)}</select></Field>}
           {kind !== 'money_out' && <Field label="To"><select className="input-field" value={to} onChange={e => setTo(e.target.value as Account)}>{ACCOUNTS.map(a => <option key={a}>{a}</option>)}</select></Field>}

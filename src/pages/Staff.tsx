@@ -106,19 +106,19 @@ export function Staff({ refresh }: { refresh: number }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div className="stat-card">
         <SectionTitle right={<Btn onClick={openAdd}><Icon d={ICONS.plus} size={14} /> Add staff</Btn>}>Staff logins</SectionTitle>
-        <p style={{ fontSize: 13, color: '#9ca3af', margin: 0, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13, color: 'var(--c-text-2)', margin: 0, lineHeight: 1.6 }}>
           Create a username and password for each salesperson and give them the details. They sign in with exactly those; nobody can create their own account.
-          To stop someone signing in, click <b style={{ color: '#ef4444' }}>Disable</b>.
+          To stop someone signing in, click <b style={{ color: 'var(--c-danger)' }}>Disable</b>.
         </p>
       </div>
 
       {pending.length > 0 && (
-        <div className="stat-card" style={{ borderColor: 'rgba(234,179,8,0.35)' }}>
+        <div className="stat-card" style={{ borderColor: 'color-mix(in srgb, var(--c-warn) 35%, transparent)' }}>
           <SectionTitle>Accounts without access ({pending.length})</SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {pending.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 12px', borderRadius: 8, background: 'rgba(234,179,8,0.06)' }}>
-                <div><div style={{ fontSize: 14, color: '#e8ecf4', fontWeight: 600 }}>{p.full_name}</div><div style={{ fontSize: 12, color: '#6b7280' }}>{emailToLogin(p.email)}</div></div>
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 12px', borderRadius: 8, background: 'color-mix(in srgb, var(--c-warn) 6%, transparent)' }}>
+                <div><div style={{ fontSize: 14, color: 'var(--c-text)', fontWeight: 600 }}>{p.full_name}</div><div style={{ fontSize: 12, color: 'var(--c-text-3)' }}>{emailToLogin(p.email)}</div></div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Btn variant="danger" disabled={busy === p.id} onClick={() => change(p, 'disabled')}>Reject</Btn>
                   <Btn disabled={busy === p.id} onClick={() => change(p, 'sales')}>Approve as salesperson</Btn>
@@ -139,7 +139,7 @@ export function Staff({ refresh }: { refresh: number }) {
               <tbody>
                 {staff.map(p => (
                   <tr key={p.id} className="table-row">
-                    <Td strong>{p.full_name}{p.id === me?.id ? <span style={{ color: '#4b5563', fontWeight: 400 }}> (you)</span> : ''}</Td>
+                    <Td strong>{p.full_name}{p.id === me?.id ? <span style={{ color: 'var(--c-text-4)', fontWeight: 400 }}> (you)</span> : ''}</Td>
                     <Td mono>{emailToLogin(p.email)}</Td>
                     <Td><span className={ROLE_BADGE[p.role]}>{ROLE_LABEL[p.role]}</span></Td>
                     <Td mono right>{today[p.id] ? `${cedi(today[p.id].total)} · ${today[p.id].count}` : '—'}</Td>
@@ -215,13 +215,13 @@ export function Staff({ refresh }: { refresh: number }) {
       {creds && (
         <Modal title={creds.isNew ? 'Login created' : 'Password changed'} onClose={() => setCreds(null)} width={420}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <p style={{ fontSize: 13, color: '#9ca3af', margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: 'var(--c-text-2)', margin: 0, lineHeight: 1.5 }}>
               Give these details to {creds.name}. The password is not shown again; you can always set a new one with Reset password.
             </p>
-            <div style={{ background: '#06080f', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 16, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '10px 16px', fontSize: 14 }}>
-              <span style={{ color: '#6b7280' }}>Username</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#e8ecf4', fontWeight: 600 }}>{creds.login}</span>
-              <span style={{ color: '#6b7280' }}>Password</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#00d46a', fontWeight: 600 }}>{creds.password}</span>
-              <span style={{ color: '#6b7280' }}>Sign in at</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9ca3af', fontSize: 12, wordBreak: 'break-all' }}>{window.location.origin}</span>
+            <div style={{ background: 'var(--c-bg)', border: '1px solid color-mix(in srgb, var(--c-ink) 8%, transparent)', borderRadius: 10, padding: 16, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '10px 16px', fontSize: 14 }}>
+              <span style={{ color: 'var(--c-text-3)' }}>Username</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-text)', fontWeight: 600 }}>{creds.login}</span>
+              <span style={{ color: 'var(--c-text-3)' }}>Password</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-accent)', fontWeight: 600 }}>{creds.password}</span>
+              <span style={{ color: 'var(--c-text-3)' }}>Sign in at</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-text-2)', fontSize: 12, wordBreak: 'break-all' }}>{window.location.origin}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <Btn variant="ghost" onClick={copyCreds}>{copied ? 'Copied' : 'Copy details'}</Btn>

@@ -51,11 +51,11 @@ export function SettingsPage() {
           <Field label="VAT / tax rate (%)"><input className="input-field" type="number" step="0.01" min="0" max="100" value={form.vat_rate} onChange={set('vat_rate')} /></Field>
           <Field label="Max discount a salesperson can give (%)"><input className="input-field" type="number" step="0.5" min="0" max="100" value={form.max_discount_pct} onChange={set('max_discount_pct')} /></Field>
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#9ca3af', cursor: 'pointer' }}>
-          <input type="checkbox" checked={form.block_oversell} onChange={e => { setSaved(false); setForm(f => ({ ...f, block_oversell: e.target.checked })) }} style={{ width: 16, height: 16, accentColor: '#00d46a' }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--c-text-2)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={form.block_oversell} onChange={e => { setSaved(false); setForm(f => ({ ...f, block_oversell: e.target.checked })) }} style={{ width: 16, height: 16, accentColor: 'var(--c-accent)' }} />
           Stop sales when there is not enough stock recorded
         </label>
-        <div style={{ fontSize: 12, color: '#4b5563' }}>Turn this off only if your stock counts are not up to date yet; stock will then stop at zero instead of blocking the sale.</div>
+        <div style={{ fontSize: 12, color: 'var(--c-text-4)' }}>Turn this off only if your stock counts are not up to date yet; stock will then stop at zero instead of blocking the sale.</div>
       </div>
 
       <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -66,7 +66,7 @@ export function SettingsPage() {
       <ErrorBox>{error}</ErrorBox>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Btn>
-        {saved && <span style={{ fontSize: 13, color: '#00d46a' }}>Saved. Open tills pick this up after Sync or a refresh.</span>}
+        {saved && <span style={{ fontSize: 13, color: 'var(--c-accent)' }}>Saved. Open tills pick this up after Sync or a refresh.</span>}
       </div>
     </div>
   )

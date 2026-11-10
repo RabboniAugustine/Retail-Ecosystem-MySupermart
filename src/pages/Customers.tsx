@@ -5,7 +5,7 @@ import { cedi } from '../lib/format'
 import type { Customer } from '../lib/types'
 import { Btn, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner, StatCard, Th, Td } from '../components/ui'
 
-const tierColor = (t: string) => t === 'Platinum' ? '#a855f7' : t === 'Gold' ? '#f59e0b' : t === 'Silver' ? '#9ca3af' : '#b45309'
+const tierColor = (t: string) => t === 'Platinum' ? 'var(--c-purple)' : t === 'Gold' ? 'var(--c-warn)' : t === 'Silver' ? 'var(--c-text-2)' : 'var(--c-warn)'
 const BLANK = { name: '', phone: '', email: '', customer_code: '' }
 
 export function Customers({ refresh }: { refresh: number }) {
@@ -58,16 +58,16 @@ export function Customers({ refresh }: { refresh: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div className="g4">
-        <StatCard label="Customers" value={customers.length.toString()} icon="crm" color="#a855f7" />
-        <StatCard label="Platinum / Gold" value={customers.filter(c => ['Platinum', 'Gold'].includes(c.tier)).length.toString()} sub="High-value" icon="trending" color="#f59e0b" />
-        <StatCard label="Total spend" value={cedi(customers.reduce((s, c) => s + Number(c.total_spent), 0), 0)} sub="All loyalty customers" icon="accounting" color="#00d46a" />
-        <StatCard label="Points outstanding" value={customers.reduce((s, c) => s + c.points, 0).toLocaleString()} icon="reports" color="#3b82f6" />
+        <StatCard label="Customers" value={customers.length.toString()} icon="crm" color="var(--c-purple)" />
+        <StatCard label="Platinum / Gold" value={customers.filter(c => ['Platinum', 'Gold'].includes(c.tier)).length.toString()} sub="High-value" icon="trending" color="var(--c-warn)" />
+        <StatCard label="Total spend" value={cedi(customers.reduce((s, c) => s + Number(c.total_spent), 0), 0)} sub="All loyalty customers" icon="accounting" color="var(--c-accent)" />
+        <StatCard label="Points outstanding" value={customers.reduce((s, c) => s + c.points, 0).toLocaleString()} icon="reports" color="var(--c-info)" />
       </div>
 
       <div className="stat-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
-            <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}><Icon d={ICONS.search} size={14} /></div>
+            <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-3)' }}><Icon d={ICONS.search} size={14} /></div>
             <input className="input-field" style={{ paddingLeft: 34 }} placeholder="Search name, phone, code…" value={query} onChange={e => setQuery(e.target.value)} />
           </div>
           <div style={{ flex: 1 }} />
@@ -84,20 +84,20 @@ export function Customers({ refresh }: { refresh: number }) {
                   <tr key={c.id} className="table-row">
                     <Td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: `${tierColor(c.tier)}18`, border: `1.5px solid ${tierColor(c.tier)}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: tierColor(c.tier), flexShrink: 0 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: `color-mix(in srgb, ${tierColor(c.tier)} 10%, transparent)`, border: `1.5px solid ${tierColor(c.tier)}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: tierColor(c.tier), flexShrink: 0 }}>
                           {c.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
-                        <span style={{ fontWeight: 600, color: '#e8ecf4' }}>{c.name}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--c-text)' }}>{c.name}</span>
                       </div>
                     </Td>
                     <Td mono>{c.phone ?? '—'}</Td>
                     <Td mono muted>{c.customer_code ?? '—'}</Td>
                     <Td mono strong right>{cedi(c.total_spent)}</Td>
                     <Td mono right>{c.visit_count}</Td>
-                    <Td mono right style={{ color: '#00d46a' }}>{c.points.toLocaleString()}</Td>
-                    <Td><span className="badge" style={{ background: `${tierColor(c.tier)}18`, color: tierColor(c.tier) }}>{c.tier}</span></Td>
+                    <Td mono right style={{ color: 'var(--c-good)', fontWeight: 600 }}>{c.points.toLocaleString()}</Td>
+                    <Td><span className="badge" style={{ background: `color-mix(in srgb, ${tierColor(c.tier)} 10%, transparent)`, color: tierColor(c.tier) }}>{c.tier}</span></Td>
                     <Td mono muted>{c.last_visit ?? '—'}</Td>
-                    <Td><button onClick={() => openEdit(c)} title="Edit" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button></Td>
+                    <Td><button onClick={() => openEdit(c)} title="Edit" style={{ background: 'color-mix(in srgb, var(--c-ink) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--c-ink) 8%, transparent)', color: 'var(--c-text-2)', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button></Td>
                   </tr>
                 ))}
               </tbody>

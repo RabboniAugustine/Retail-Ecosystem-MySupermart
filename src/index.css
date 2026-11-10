@@ -24,21 +24,73 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+/* ── Theme colours ─────────────────────────────────────────────────────────
+   Dark (original) and Light (black, white and red). The chosen theme is set
+   as <html data-theme="light|dark"> by src/lib/theme.ts. */
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-bg: #06080f;
+  --c-panel: #0d1120;
+  --c-panel-2: #111827;
+  --c-muted: #141c2e;
+  --c-ink: #ffffff;          /* lines and soft fills are this colour at low opacity */
+  --c-text: #e8ecf4;
+  --c-text-2: #9ca3af;
+  --c-text-3: #6b7280;
+  --c-text-4: #4b5563;
+  --c-accent: #00d46a;
+  --c-accent-2: #009f50;
+  --c-on-accent: #03120a;
+  --c-good: #00d46a;         /* positive values: money in, paid, in stock */
+  --c-danger: #ef4444;
+  --c-warn: #f59e0b;
+  --c-info: #3b82f6;
+  --c-purple: #a855f7;
+  --c-cyan: #06b6d4;
+  --c-shadow: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --c-bg: #f4f4f4;
+  --c-panel: #ffffff;
+  --c-panel-2: #ffffff;
+  --c-muted: #ececec;
+  --c-ink: #000000;
+  --c-text: #0a0a0a;
+  --c-text-2: #3d3d3d;
+  --c-text-3: #6b6b6b;
+  --c-text-4: #9a9a9a;
+  --c-accent: #d0021b;
+  --c-accent-2: #a30015;
+  --c-on-accent: #ffffff;
+  --c-good: #0a0a0a;
+  --c-danger: #d0021b;
+  --c-warn: #0a0a0a;
+  --c-info: #0a0a0a;
+  --c-purple: #0a0a0a;
+  --c-cyan: #0a0a0a;
+  --c-shadow: rgba(0, 0, 0, 0.12);
+  --c-cat-dot: #b3b3b3;      /* category markers: one neutral grey */
+  --c-stat-icon: #0a0a0a;    /* summary card icons in black */
+  --c-glow: transparent;     /* no coloured glow behind the sign-in box */
+}
+
 :root {
-  --background: #06080f;
-  --foreground: #e8ecf4;
-  --card: #0d1120;
-  --card-foreground: #e8ecf4;
-  --primary: #00d46a;
-  --primary-foreground: #03120a;
-  --secondary: #111827;
-  --secondary-foreground: #9ca3af;
-  --muted: #141c2e;
-  --muted-foreground: #6b7280;
-  --accent: #00d46a;
-  --accent-foreground: #03120a;
-  --border: rgba(255,255,255,0.07);
-  --ring: #00d46a;
+  --background: var(--c-bg);
+  --foreground: var(--c-text);
+  --card: var(--c-panel);
+  --card-foreground: var(--c-text);
+  --primary: var(--c-accent);
+  --primary-foreground: var(--c-on-accent);
+  --secondary: var(--c-panel-2);
+  --secondary-foreground: var(--c-text-2);
+  --muted: var(--c-muted);
+  --muted-foreground: var(--c-text-3);
+  --accent: var(--c-accent);
+  --accent-foreground: var(--c-on-accent);
+  --border: color-mix(in srgb, var(--c-ink) 7%, transparent);
+  --ring: var(--c-accent);
   --radius: 10px;
 }
 
@@ -61,8 +113,8 @@ body {
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--c-ink) 12%, transparent); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--c-ink) 22%, transparent); }
 
 .sidebar-link {
   display: flex;
@@ -81,7 +133,7 @@ body {
   color: var(--foreground);
 }
 .sidebar-link.active {
-  background: rgba(0, 212, 106, 0.12);
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
   color: var(--primary);
 }
 
@@ -93,7 +145,7 @@ body {
   transition: border-color 0.15s;
 }
 .stat-card:hover {
-  border-color: rgba(0, 212, 106, 0.25);
+  border-color: color-mix(in srgb, var(--c-accent) 25%, transparent);
 }
 
 .badge {
@@ -106,14 +158,14 @@ body {
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.03em;
 }
-.badge-green { background: rgba(0,212,106,0.15); color: #00d46a; }
-.badge-yellow { background: rgba(234,179,8,0.15); color: #eab308; }
-.badge-red { background: rgba(239,68,68,0.15); color: #ef4444; }
-.badge-blue { background: rgba(59,130,246,0.15); color: #3b82f6; }
-.badge-gray { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.badge-green { background: color-mix(in srgb, var(--c-good) 12%, transparent); color: var(--c-good); }
+.badge-yellow { background: color-mix(in srgb, var(--c-warn) 15%, transparent); color: var(--c-warn); }
+.badge-red { background: color-mix(in srgb, var(--c-danger) 15%, transparent); color: var(--c-danger); }
+.badge-blue { background: color-mix(in srgb, var(--c-info) 15%, transparent); color: var(--c-info); }
+.badge-gray { background: color-mix(in srgb, var(--c-text-3) 15%, transparent); color: var(--c-text-2); }
 
 .table-row:hover td {
-  background: rgba(255,255,255,0.025);
+  background: color-mix(in srgb, var(--c-ink) 2.5%, transparent);
 }
 
 .progress-bar {
@@ -161,7 +213,7 @@ body {
 }
 .pos-key:hover {
   background: var(--muted);
-  border-color: rgba(0,212,106,0.3);
+  border-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
   color: var(--primary);
 }
 .pos-key:active { transform: scale(0.96); }
@@ -179,7 +231,7 @@ body {
   transition: border-color 0.15s;
 }
 .input-field:focus {
-  border-color: rgba(0,212,106,0.5);
+  border-color: color-mix(in srgb, var(--c-accent) 50%, transparent);
 }
 .input-field::placeholder { color: var(--muted-foreground); }
 
@@ -242,3 +294,7 @@ body {
   }
   body.printing-report #root { display: none !important; }
 }
+
+/* Light theme: cards get a hairline border instead of glow, softer hovers */
+:root[data-theme="light"] .stat-card { box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+:root[data-theme="light"] .badge { font-weight: 600; }

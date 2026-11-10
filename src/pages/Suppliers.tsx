@@ -58,9 +58,9 @@ export function Suppliers({ refresh }: { refresh: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div className="g3">
-        <StatCard label="Suppliers" value={suppliers.length.toString()} sub="In directory" icon="suppliers" color="#06b6d4" />
-        <StatCard label="Total payable" value={cedi(totalPayable, 0)} sub="Outstanding balance" icon="accounting" color="#ef4444" />
-        <StatCard label="Average rating" value={suppliers.length ? (suppliers.reduce((s, x) => s + Number(x.rating), 0) / suppliers.length).toFixed(1) : '—'} sub="Supplier quality" icon="check" color="#f59e0b" />
+        <StatCard label="Suppliers" value={suppliers.length.toString()} sub="In directory" icon="suppliers" color="var(--c-cyan)" />
+        <StatCard label="Total payable" value={cedi(totalPayable, 0)} sub="Outstanding balance" icon="accounting" color="var(--c-danger)" />
+        <StatCard label="Average rating" value={suppliers.length ? (suppliers.reduce((s, x) => s + Number(x.rating), 0) / suppliers.length).toFixed(1) : '—'} sub="Supplier quality" icon="check" color="var(--c-warn)" />
       </div>
 
       <div className="stat-card">
@@ -81,9 +81,9 @@ export function Suppliers({ refresh }: { refresh: number }) {
                     <Td>{s.contact_name || '—'}</Td>
                     <Td mono>{s.phone || '—'}</Td>
                     <Td>{s.category ? <span className="badge badge-blue">{s.category}</span> : '—'}</Td>
-                    <Td style={{ color: '#f59e0b', fontWeight: 600 }}>{Number(s.rating).toFixed(1)} / 5</Td>
-                    <Td mono strong right style={{ color: Number(s.payable) > 0 ? '#ef4444' : '#00d46a' }}>{Number(s.payable) > 0 ? cedi(s.payable) : 'Cleared'}</Td>
-                    <Td><button onClick={() => openEdit(s)} title="Edit" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button></Td>
+                    <Td style={{ color: 'var(--c-warn)', fontWeight: 600 }}>{Number(s.rating).toFixed(1)} / 5</Td>
+                    <Td mono strong right style={{ color: Number(s.payable) > 0 ? 'var(--c-danger)' : 'var(--c-good)' }}>{Number(s.payable) > 0 ? cedi(s.payable) : 'Cleared'}</Td>
+                    <Td><button onClick={() => openEdit(s)} title="Edit" style={{ background: 'color-mix(in srgb, var(--c-ink) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--c-ink) 8%, transparent)', color: 'var(--c-text-2)', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button></Td>
                   </tr>
                 ))}
               </tbody>

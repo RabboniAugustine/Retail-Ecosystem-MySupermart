@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { listenToDisplay, type DisplayLine, type DisplayState } from '../lib/display'
 import { cedi } from '../lib/format'
+import { useTheme } from '../lib/theme'
 
 /**
  * Customer-facing screen. Opened from the POS ("Customer screen" button) and
@@ -9,8 +10,8 @@ import { cedi } from '../lib/format'
  */
 
 const C = {
-  bg: '#06080f', panel: '#0b0f1a', line: 'rgba(255,255,255,0.07)',
-  text: '#e8ecf4', soft: '#9ca3af', faint: '#6b7280', green: '#00d46a',
+  bg: 'var(--c-bg)', panel: 'var(--c-panel)', line: 'color-mix(in srgb, var(--c-ink) 7%, transparent)',
+  text: 'var(--c-text)', soft: 'var(--c-text-2)', faint: 'var(--c-text-3)', green: 'var(--c-accent)',
 }
 const mono = 'JetBrains Mono, monospace'
 const lineKey = (l: DisplayLine, i: number) => (l.id != null ? `p${l.id}` : `${l.name}#${i}`)
@@ -18,6 +19,7 @@ const lineKey = (l: DisplayLine, i: number) => (l.id != null ? `p${l.id}` : `${l
 export function CustomerDisplay() {
   const [state, setState] = useState<DisplayState>({ mode: 'idle', shopName: 'My Supermart', message: 'Welcome' })
   const [lastKey, setLastKey] = useState<string | null>(null)
+  useTheme() // follows the theme chosen on the till
   const [now, setNow] = useState(new Date())
   const prevQty = useRef<Map<string, number>>(new Map())
   const listRef = useRef<HTMLDivElement>(null)
@@ -129,7 +131,7 @@ function Cart({ state, lastKey, listRef }: {
                 style={{
                   display: 'grid', gridTemplateColumns: cols, gap: '1.5vw', alignItems: 'center',
                   padding: '1.7vh 3vw', borderBottom: `1px solid ${C.line}`,
-                  background: isLast ? 'rgba(0,212,106,0.06)' : 'transparent',
+                  background: isLast ? 'color-mix(in srgb, var(--c-accent) 6%, transparent)' : 'transparent',
                   boxShadow: isLast ? `inset 4px 0 0 ${C.green}` : 'none',
                   transition: 'background 0.3s',
                 }}>

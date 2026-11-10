@@ -38,9 +38,9 @@ export function Utilities({ refresh }: { refresh: number }) {
       <div className="g3">
         {tools.map(t => (
           <button key={t.id} onClick={() => setTool(t.id)} className="stat-card"
-            style={{ textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit', borderColor: tool === t.id ? 'rgba(0,212,106,0.45)' : undefined, background: tool === t.id ? 'rgba(0,212,106,0.05)' : undefined }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: tool === t.id ? '#00d46a' : '#e8ecf4', marginBottom: 4 }}>{t.label}</div>
-            <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{t.text}</div>
+            style={{ textAlign: 'left', cursor: 'pointer', color: 'inherit', font: 'inherit', borderColor: tool === t.id ? 'color-mix(in srgb, var(--c-accent) 45%, transparent)' : undefined, background: tool === t.id ? 'color-mix(in srgb, var(--c-accent) 5%, transparent)' : undefined }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: tool === t.id ? 'var(--c-accent)' : 'var(--c-text)', marginBottom: 4 }}>{t.label}</div>
+            <div style={{ fontSize: 12, color: 'var(--c-text-3)', lineHeight: 1.5 }}>{t.text}</div>
           </button>
         ))}
       </div>
@@ -62,10 +62,10 @@ function FilePicker({ onFile, busy }: { onFile: (f: File) => void; busy: boolean
     <div onDragOver={e => { e.preventDefault(); setDrag(true) }} onDragLeave={() => setDrag(false)}
       onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) onFile(f) }}
       onClick={() => ref.current?.click()}
-      style={{ border: `1.5px dashed ${drag ? '#00d46a' : 'rgba(255,255,255,0.14)'}`, borderRadius: 10, padding: '26px 16px', textAlign: 'center', cursor: 'pointer', background: drag ? 'rgba(0,212,106,0.05)' : 'transparent' }}>
+      style={{ border: `1.5px dashed ${drag ? 'var(--c-accent)' : 'color-mix(in srgb, var(--c-ink) 14%, transparent)'}`, borderRadius: 10, padding: '26px 16px', textAlign: 'center', cursor: 'pointer', background: drag ? 'color-mix(in srgb, var(--c-accent) 5%, transparent)' : 'transparent' }}>
       <input ref={ref} type="file" accept=".xlsx,.csv,.txt" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
-      <div style={{ fontSize: 14, color: '#e8ecf4', fontWeight: 600 }}>{busy ? 'Reading file…' : 'Choose a file or drop it here'}</div>
-      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Excel (.xlsx) or CSV</div>
+      <div style={{ fontSize: 14, color: 'var(--c-text)', fontWeight: 600 }}>{busy ? 'Reading file…' : 'Choose a file or drop it here'}</div>
+      <div style={{ fontSize: 12, color: 'var(--c-text-3)', marginTop: 4 }}>Excel (.xlsx) or CSV</div>
     </div>
   )
 }
@@ -73,14 +73,14 @@ function FilePicker({ onFile, busy }: { onFile: (f: File) => void; busy: boolean
 function Results({ ok, okLabel, errors }: { ok: number; okLabel: string; errors: RowError[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(0,212,106,0.08)', border: '1px solid rgba(0,212,106,0.25)', color: '#00d46a', fontSize: 13 }}>
+      <div style={{ padding: '10px 12px', borderRadius: 8, background: 'color-mix(in srgb, var(--c-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--c-accent) 25%, transparent)', color: 'var(--c-accent)', fontSize: 13 }}>
         {ok} {okLabel}{errors.length ? `, ${errors.length} skipped` : ''}.
       </div>
       {errors.length > 0 && (
         <div className="table-wrap">
           <table>
             <thead><tr><Th>File row</Th><Th>Item</Th><Th>Why it was skipped</Th></tr></thead>
-            <tbody>{errors.map((e, i) => <tr key={i}><Td mono>{e.row}</Td><Td strong>{e.name || '—'}</Td><Td style={{ color: '#f87171', whiteSpace: 'normal' }}>{e.error}</Td></tr>)}</tbody>
+            <tbody>{errors.map((e, i) => <tr key={i}><Td mono>{e.row}</Td><Td strong>{e.name || '—'}</Td><Td style={{ color: 'var(--c-danger)', whiteSpace: 'normal' }}>{e.error}</Td></tr>)}</tbody>
           </table>
         </div>
       )}
@@ -155,8 +155,8 @@ function ImportTool({ items, onDone }: { items: InventoryRow[]; onDone: () => vo
         <Btn variant="ghost" onClick={() => downloadTemplate('xlsx')}><Icon d={ICONS.download} size={14} /> Excel template</Btn>
         <Btn variant="ghost" onClick={() => downloadTemplate('csv')}><Icon d={ICONS.download} size={14} /> CSV template</Btn>
       </div>}>Import new items</SectionTitle>
-      <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#9ca3af', lineHeight: 1.8 }}>
-        <li>Download the template and fill one item per row. <b style={{ color: '#e8ecf4' }}>Name</b> and <b style={{ color: '#e8ecf4' }}>Selling price</b> are required.</li>
+      <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--c-text-2)', lineHeight: 1.8 }}>
+        <li>Download the template and fill one item per row. <b style={{ color: 'var(--c-text)' }}>Name</b> and <b style={{ color: 'var(--c-text)' }}>Selling price</b> are required.</li>
         <li>Upload the file and check the preview. Items that already exist (same SKU or barcode) are skipped.</li>
         <li>Click Import. Opening stock is added to the stock log.</li>
       </ol>
@@ -165,11 +165,11 @@ function ImportTool({ items, onDone }: { items: InventoryRow[]; onDone: () => vo
       {result && <Results ok={result.created} okLabel="items imported" errors={result.errors} />}
       {file && (
         <>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: '#9ca3af' }}>
-            <span><b style={{ color: '#e8ecf4' }}>{fileName}</b></span>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: 'var(--c-text-2)' }}>
+            <span><b style={{ color: 'var(--c-text)' }}>{fileName}</b></span>
             <span>{file.rows.length} rows</span>
-            <span style={{ color: '#00d46a' }}>{good.length} ready to import</span>
-            {checked.length - good.length > 0 && <span style={{ color: '#f59e0b' }}>{checked.length - good.length} will be skipped</span>}
+            <span style={{ color: 'var(--c-good)', fontWeight: 600 }}>{good.length} ready to import</span>
+            {checked.length - good.length > 0 && <span style={{ color: 'var(--c-warn)' }}>{checked.length - good.length} will be skipped</span>}
             {file.unknownHeaders.length > 0 && <span>Ignored columns: {file.unknownHeaders.join(', ')}</span>}
           </div>
           <div className="table-wrap" style={{ maxHeight: 420, overflowY: 'auto' }}>
@@ -185,7 +185,7 @@ function ImportTool({ items, onDone }: { items: InventoryRow[]; onDone: () => vo
                     <Td mono right>{row.cost ? cedi(row.cost) : '—'}</Td>
                     <Td mono right>{row.price ? cedi(row.price) : '—'}</Td>
                     <Td mono right>{row.stock || '0'}</Td>
-                    <Td style={{ whiteSpace: 'normal', color: problem ? '#f59e0b' : '#00d46a' }}>{problem || 'New item'}</Td>
+                    <Td style={{ whiteSpace: 'normal', color: problem ? 'var(--c-danger)' : 'var(--c-good)' }}>{problem || 'New item'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -314,17 +314,17 @@ function BulkTool({ items, onDone }: { items: InventoryRow[]; onDone: () => void
   return (
     <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <SectionTitle>Update items in bulk</SectionTitle>
-      <div style={{ display: 'flex', gap: 4, background: '#06080f', padding: 4, borderRadius: 8, maxWidth: 460 }}>
+      <div style={{ display: 'flex', gap: 4, background: 'var(--c-bg)', padding: 4, borderRadius: 8, maxWidth: 460 }}>
         {([['file', 'From a file'], ['percent', 'Change prices by %']] as const).map(([k, l]) => (
           <button key={k} className="tab-btn" onClick={() => { setMode(k); setPlan(null); setResult(null); setError('') }}
-            style={{ flex: 1, background: mode === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: mode === k ? '#00d46a' : '#6b7280' }}>{l}</button>
+            style={{ flex: 1, background: mode === k ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: mode === k ? 'var(--c-accent)' : 'var(--c-text-3)' }}>{l}</button>
         ))}
       </div>
 
       {mode === 'file' ? (
         <>
-          <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#9ca3af', lineHeight: 1.8 }}>
-            <li>Go to <b style={{ color: '#e8ecf4' }}>Export items</b> and download the Excel file.</li>
+          <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--c-text-2)', lineHeight: 1.8 }}>
+            <li>Go to <b style={{ color: 'var(--c-text)' }}>Export items</b> and download the Excel file.</li>
             <li>Change the prices, costs, stock counts or details you need. Leave a cell empty to keep it as it is.</li>
             <li>Upload it here. Items are found by SKU, then barcode, then name. Check the changes, then apply.</li>
           </ol>
@@ -347,16 +347,16 @@ function BulkTool({ items, onDone }: { items: InventoryRow[]; onDone: () => void
 
       {plan && (
         <>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: '#9ca3af', alignItems: 'center' }}>
-            {fileName && <b style={{ color: '#e8ecf4' }}>{fileName}</b>}
-            <span style={{ color: '#00d46a' }}>{toApply.length} items will change</span>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: 'var(--c-text-2)', alignItems: 'center' }}>
+            {fileName && <b style={{ color: 'var(--c-text)' }}>{fileName}</b>}
+            <span style={{ color: 'var(--c-good)', fontWeight: 600 }}>{toApply.length} items will change</span>
             <span>{plan.filter(p => !p.problem && effective(p).length === 0).length} unchanged</span>
-            {plan.some(p => p.problem) && <span style={{ color: '#f59e0b' }}>{plan.filter(p => p.problem).length} rows skipped</span>}
+            {plan.some(p => p.problem) && <span style={{ color: 'var(--c-warn)' }}>{plan.filter(p => p.problem).length} rows skipped</span>}
           </div>
           {hasStock && (
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: 12, borderRadius: 8, border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.05)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#e8ecf4', cursor: 'pointer' }}>
-                <input type="checkbox" checked={includeStock} onChange={e => setIncludeStock(e.target.checked)} style={{ accentColor: '#00d46a', width: 16, height: 16 }} />
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: 12, borderRadius: 8, border: '1px solid color-mix(in srgb, var(--c-warn) 30%, transparent)', background: 'color-mix(in srgb, var(--c-warn) 5%, transparent)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--c-text)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={includeStock} onChange={e => setIncludeStock(e.target.checked)} style={{ accentColor: 'var(--c-accent)', width: 16, height: 16 }} />
                 Also set stock to the counts in the file
               </label>
               {includeStock && <input className="input-field" value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason for the stock log" style={{ maxWidth: 260, padding: '6px 10px' }} />}
@@ -371,13 +371,13 @@ function BulkTool({ items, onDone }: { items: InventoryRow[]; onDone: () => void
                     {fileName && <Td mono muted>{p.row?._row}</Td>}
                     <Td strong style={{ whiteSpace: 'normal' }}>{p.item?.ms_products.name ?? p.row?.name ?? p.row?.sku ?? '—'}</Td>
                     <Td style={{ whiteSpace: 'normal' }}>
-                      {p.problem ? <span style={{ color: '#f59e0b' }}>{p.problem}</span> : (
+                      {p.problem ? <span style={{ color: 'var(--c-warn)' }}>{p.problem}</span> : (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px' }}>
                           {effective(p).map(c => (
                             <span key={c.field} style={{ fontSize: 12 }}>
-                              <span style={{ color: '#6b7280' }}>{labelOf(c.field)}</span>{' '}
-                              <span style={{ color: '#9ca3af', textDecoration: 'line-through' }}>{fmt(c.field, c.from)}</span>{' → '}
-                              <span style={{ color: '#00d46a', fontWeight: 600 }}>{fmt(c.field, c.to)}</span>
+                              <span style={{ color: 'var(--c-text-3)' }}>{labelOf(c.field)}</span>{' '}
+                              <span style={{ color: 'var(--c-text-2)', textDecoration: 'line-through' }}>{fmt(c.field, c.from)}</span>{' → '}
+                              <span style={{ color: 'var(--c-accent)', fontWeight: 600 }}>{fmt(c.field, c.to)}</span>
                             </span>
                           ))}
                         </div>
@@ -412,16 +412,16 @@ function ExportTool({ items }: { items: InventoryRow[] }) {
     <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <SectionTitle>Export items</SectionTitle>
       <div className="g3">
-        <StatCard label="Items" value={chosen.length.toLocaleString()} icon="inventory" color="#3b82f6" />
-        <StatCard label="Units in stock" value={chosen.reduce((s, i) => s + i.stock, 0).toLocaleString()} icon="inventory" color="#00d46a" />
-        <StatCard label="Value at cost" value={cedi(chosen.reduce((s, i) => s + i.stock * Number(i.ms_products.cost), 0))} icon="accounting" color="#a855f7" />
+        <StatCard label="Items" value={chosen.length.toLocaleString()} icon="inventory" color="var(--c-info)" />
+        <StatCard label="Units in stock" value={chosen.reduce((s, i) => s + i.stock, 0).toLocaleString()} icon="inventory" color="var(--c-accent)" />
+        <StatCard label="Value at cost" value={cedi(chosen.reduce((s, i) => s + i.stock * Number(i.ms_products.cost), 0))} icon="accounting" color="var(--c-purple)" />
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <Field label="Category"><select className="input-field" value={cat} onChange={e => setCat(e.target.value)} style={{ width: 200 }}>{cats.map(c => <option key={c}>{c}</option>)}</select></Field>
         <Btn onClick={() => run('xlsx')} disabled={busy || !chosen.length}><Icon d={ICONS.download} size={14} /> Download Excel</Btn>
         <Btn variant="ghost" onClick={() => run('csv')} disabled={busy || !chosen.length}><Icon d={ICONS.download} size={14} /> Download CSV</Btn>
       </div>
-      <div style={{ fontSize: 12, color: '#6b7280' }}>Columns: {ITEM_COLUMNS.map(c => c.label).join(', ')}. The same file can be edited and uploaded in Update items in bulk.</div>
+      <div style={{ fontSize: 12, color: 'var(--c-text-3)' }}>Columns: {ITEM_COLUMNS.map(c => c.label).join(', ')}. The same file can be edited and uploaded in Update items in bulk.</div>
     </div>
   )
 }

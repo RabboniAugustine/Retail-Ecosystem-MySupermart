@@ -39,8 +39,8 @@ export function SalesHome({ refresh, onStartSelling }: { refresh: number; onStar
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 22, fontWeight: 700, color: '#e8ecf4', margin: 0 }}>{greet}, {profile?.full_name?.split(' ')[0]}</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 3 }}>Your shift today · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 22, fontWeight: 700, color: 'var(--c-text)', margin: 0 }}>{greet}, {profile?.full_name?.split(' ')[0]}</h1>
+          <p style={{ color: 'var(--c-text-3)', fontSize: 13, marginTop: 3 }}>Your shift today · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         </div>
         <Btn onClick={onStartSelling}><Icon d={ICONS.pos} size={15} /> Start selling</Btn>
       </div>
@@ -48,10 +48,10 @@ export function SalesHome({ refresh, onStartSelling }: { refresh: number; onStar
       {loading ? <Spinner /> : (
         <>
           <div className="g4">
-            <StatCard label="My sales today" value={cedi(total)} sub={`${done.length} customers served`} icon="pos" color="#00d46a" />
-            <StatCard label="Cash to hand in" value={cedi(by('Cash'))} sub="Cash payments" icon="accounting" color="#f59e0b" />
-            <StatCard label="Mobile Money" value={cedi(by('Mobile Money'))} sub="MoMo payments" icon="trending" color="#a855f7" />
-            <StatCard label="Card" value={cedi(by('Card'))} sub="Card payments" icon="reports" color="#3b82f6" />
+            <StatCard label="My sales today" value={cedi(total)} sub={`${done.length} customers served`} icon="pos" color="var(--c-accent)" />
+            <StatCard label="Cash to hand in" value={cedi(by('Cash'))} sub="Cash payments" icon="accounting" color="var(--c-warn)" />
+            <StatCard label="Mobile Money" value={cedi(by('Mobile Money'))} sub="MoMo payments" icon="trending" color="var(--c-purple)" />
+            <StatCard label="Card" value={cedi(by('Card'))} sub="Card payments" icon="reports" color="var(--c-info)" />
           </div>
 
           <div className="g-split">
@@ -82,8 +82,8 @@ export function SalesHome({ refresh, onStartSelling }: { refresh: number; onStar
               {alerts.length === 0 ? <EmptyState title="Stock looks good" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                   {alerts.slice(0, 10).map(r => (
-                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: r.stock <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)' }}>
-                      <span style={{ fontSize: 13, color: '#e8ecf4' }}>{r.ms_products?.name}</span>
+                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: r.stock <= 0 ? 'color-mix(in srgb, var(--c-danger) 7%, transparent)' : 'color-mix(in srgb, var(--c-warn) 7%, transparent)' }}>
+                      <span style={{ fontSize: 13, color: 'var(--c-text)' }}>{r.ms_products?.name}</span>
                       <span className={`badge ${r.stock <= 0 ? 'badge-red' : 'badge-yellow'}`}>{r.stock <= 0 ? 'OUT' : `${r.stock} left`}</span>
                     </div>
                   ))}

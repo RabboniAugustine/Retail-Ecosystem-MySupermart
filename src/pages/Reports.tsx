@@ -37,7 +37,7 @@ export function Reports({ refresh }: { refresh: number }) {
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         {REPORTS.map(r => (
           <button key={r.id} className="tab-btn" onClick={() => { setOut(null); setActive(r.id) }}
-            style={{ background: active === r.id ? 'rgba(0,212,106,0.12)' : 'transparent', color: active === r.id ? '#00d46a' : '#6b7280' }}>{r.label}</button>
+            style={{ background: active === r.id ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: active === r.id ? 'var(--c-accent)' : 'var(--c-text-3)' }}>{r.label}</button>
         ))}
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -80,7 +80,7 @@ function useReport<T>(load: () => Promise<T>, deps: unknown[]) {
 
 function SimpleTable({ t, maxRows }: { t: Table; maxRows?: number }) {
   const rows = maxRows ? t.rows.slice(0, maxRows) : t.rows
-  return t.rows.length === 0 ? <div style={{ fontSize: 13, color: '#6b7280', padding: '10px 0' }}>Nothing in this period.</div> : (
+  return t.rows.length === 0 ? <div style={{ fontSize: 13, color: 'var(--c-text-3)', padding: '10px 0' }}>Nothing in this period.</div> : (
     <div className="table-wrap">
       <table>
         <thead><tr>{t.columns.map(c => <Th key={c.label} right={c.align === 'right'}>{c.label}</Th>)}</tr></thead>
@@ -97,7 +97,7 @@ function SimpleTable({ t, maxRows }: { t: Table; maxRows?: number }) {
           ))}
         </tbody>
       </table>
-      {maxRows && t.rows.length > maxRows && <div style={{ fontSize: 12, color: '#6b7280', paddingTop: 8 }}>Showing {maxRows} of {t.rows.length}. Export to see all.</div>}
+      {maxRows && t.rows.length > maxRows && <div style={{ fontSize: 12, color: 'var(--c-text-3)', paddingTop: 8 }}>Showing {maxRows} of {t.rows.length}. Export to see all.</div>}
     </div>
   )
 }
@@ -147,21 +147,21 @@ function SalesReport({ range, refresh, setOut }: Props) {
   return (
     <>
       <div className="g4">
-        <StatCard label="Total received" value={cedi(t.total)} sub={`${t.count} sales · ${data.items_sold} items`} icon="pos" color="#00d46a" />
-        <StatCard label="Average sale" value={t.count ? cedi(n(t.total) / n(t.count)) : '—'} icon="trending" color="#a855f7" />
-        <StatCard label="Discounts given" value={cedi(t.discount)} sub={`VAT collected ${cedi(t.vat)}`} icon="reports" color="#f59e0b" />
-        <StatCard label="Refunds" value={cedi(data.refunds.total)} sub={`${data.refunds.count} refunded sales`} icon="refresh" color="#ef4444" />
+        <StatCard label="Total received" value={cedi(t.total)} sub={`${t.count} sales · ${data.items_sold} items`} icon="pos" color="var(--c-accent)" />
+        <StatCard label="Average sale" value={t.count ? cedi(n(t.total) / n(t.count)) : '—'} icon="trending" color="var(--c-purple)" />
+        <StatCard label="Discounts given" value={cedi(t.discount)} sub={`VAT collected ${cedi(t.vat)}`} icon="reports" color="var(--c-warn)" />
+        <StatCard label="Refunds" value={cedi(data.refunds.total)} sub={`${data.refunds.count} refunded sales`} icon="refresh" color="var(--c-danger)" />
       </div>
       <div className="stat-card">
         <SectionTitle>Sales per day</SectionTitle>
         {data.by_day.length === 0 ? <EmptyState title="No sales in this period" /> : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.by_day.map(d => ({ day: new Date(`${d.day}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), total: n(d.total) }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-              <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₵${v}`} width={60} />
-              <Tooltip contentStyle={TS} formatter={cediTip('Sales')} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="total" fill="#00d46a" radius={[3, 3, 0, 0]} maxBarSize={28} />
+              <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--c-ink) 4%, transparent)" vertical={false} />
+              <XAxis dataKey="day" tick={{ fill: 'var(--c-text-3)', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--c-text-3)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₵${v}`} width={60} />
+              <Tooltip contentStyle={TS} formatter={cediTip('Sales')} cursor={{ fill: 'color-mix(in srgb, var(--c-ink) 3%, transparent)' }} />
+              <Bar dataKey="total" fill="var(--c-accent)" radius={[3, 3, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -221,9 +221,9 @@ function PurchasesReport({ range, refresh, setOut }: Props) {
   return (
     <>
       <div className="g3">
-        <StatCard label="Total purchased" value={cedi(calc.total)} sub={`${data.length} purchases`} icon="inventory" color="#06b6d4" />
-        <StatCard label="Paid" value={cedi(calc.paid)} icon="accounting" color="#00d46a" />
-        <StatCard label="Still owed" value={cedi(calc.total - calc.paid)} icon="alert" color="#ef4444" />
+        <StatCard label="Total purchased" value={cedi(calc.total)} sub={`${data.length} purchases`} icon="inventory" color="var(--c-cyan)" />
+        <StatCard label="Paid" value={cedi(calc.paid)} icon="accounting" color="var(--c-accent)" />
+        <StatCard label="Still owed" value={cedi(calc.total - calc.paid)} icon="alert" color="var(--c-danger)" />
       </div>
       <div className="g-split">
         <div className="stat-card"><SectionTitle>Items bought</SectionTitle><SimpleTable t={calc.tables[2]} maxRows={30} /></div>
@@ -282,34 +282,34 @@ function PnlReport({ range, refresh, setOut }: Props) {
   return (
     <>
       <div className="g4">
-        <StatCard label="Net sales" value={cedi(data.net_sales)} sub="Sales minus discounts, before VAT" icon="pos" color="#00d46a" />
-        <StatCard label="Gross profit" value={cedi(data.gross_profit)} sub="After cost of goods sold" icon="trending" color="#3b82f6" />
-        <StatCard label="Expenses" value={cedi(n(data.expenses_total) + n(data.stock_loss))} sub="Including stock removed" icon="receipt" color="#ef4444" />
-        <StatCard label="Net profit" value={cedi(data.net_profit)} icon="accounting" color={n(data.net_profit) >= 0 ? '#00d46a' : '#ef4444'} />
+        <StatCard label="Net sales" value={cedi(data.net_sales)} sub="Sales minus discounts, before VAT" icon="pos" color="var(--c-accent)" />
+        <StatCard label="Gross profit" value={cedi(data.gross_profit)} sub="After cost of goods sold" icon="trending" color="var(--c-info)" />
+        <StatCard label="Expenses" value={cedi(n(data.expenses_total) + n(data.stock_loss))} sub="Including stock removed" icon="receipt" color="var(--c-danger)" />
+        <StatCard label="Net profit" value={cedi(data.net_profit)} icon="accounting" color={n(data.net_profit) >= 0 ? 'var(--c-good)' : 'var(--c-danger)'} />
       </div>
       <div className="stat-card" style={{ maxWidth: 760 }}>
         <SectionTitle>Profit and loss · {rangeLabel(range)}</SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {lines.map((l, i) => l.kind === 'head' ? (
-            <div key={i} style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, padding: '14px 0 6px' }}>{l.label}</div>
+            <div key={i} style={{ fontSize: 11, color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, padding: '14px 0 6px' }}>{l.label}</div>
           ) : (
             <div key={i} style={{
               display: 'flex', justifyContent: 'space-between', gap: 12, padding: l.kind === 'grand' ? '12px 0' : '7px 0',
               paddingLeft: l.kind === 'sub' ? 16 : 0,
-              borderTop: l.kind === 'total' || l.kind === 'grand' ? '1px solid rgba(255,255,255,0.1)' : undefined,
-              borderBottom: l.kind === 'grand' ? '3px double rgba(255,255,255,0.2)' : undefined,
+              borderTop: l.kind === 'total' || l.kind === 'grand' ? '1px solid color-mix(in srgb, var(--c-ink) 10%, transparent)' : undefined,
+              borderBottom: l.kind === 'grand' ? '3px double color-mix(in srgb, var(--c-ink) 20%, transparent)' : undefined,
               fontWeight: l.kind === 'total' || l.kind === 'grand' ? 700 : 400,
-              fontSize: l.kind === 'grand' ? 16 : 13, color: l.kind === 'sub' ? '#9ca3af' : '#e8ecf4',
+              fontSize: l.kind === 'grand' ? 16 : 13, color: l.kind === 'sub' ? 'var(--c-text-2)' : 'var(--c-text)',
             }}>
-              <span>{l.label}{l.note && <span style={{ display: 'block', fontSize: 11, color: '#6b7280', fontWeight: 400 }}>{l.note}</span>}</span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', color: l.kind === 'grand' ? (n(l.value) >= 0 ? '#00d46a' : '#ef4444') : undefined }}>
+              <span>{l.label}{l.note && <span style={{ display: 'block', fontSize: 11, color: 'var(--c-text-3)', fontWeight: 400 }}>{l.note}</span>}</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', color: l.kind === 'grand' ? (n(l.value) >= 0 ? 'var(--c-good)' : 'var(--c-danger)') : undefined }}>
                 {n(l.value) < 0 ? `(${cedi(-n(l.value))})` : cedi(l.value)}
               </span>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 14, lineHeight: 1.6 }}>
-          VAT collected in this period: <b style={{ color: '#9ca3af' }}>{cedi(data.vat)}</b> (owed to GRA, not income). Stock purchased: <b style={{ color: '#9ca3af' }}>{cedi(data.purchases)}</b>. Purchases become a cost only when the goods are sold.
+        <div style={{ fontSize: 12, color: 'var(--c-text-3)', marginTop: 14, lineHeight: 1.6 }}>
+          VAT collected in this period: <b style={{ color: 'var(--c-text-2)' }}>{cedi(data.vat)}</b> (owed to GRA, not income). Stock purchased: <b style={{ color: 'var(--c-text-2)' }}>{cedi(data.purchases)}</b>. Purchases become a cost only when the goods are sold.
         </div>
       </div>
     </>
@@ -358,10 +358,10 @@ function StockReport({ range, refresh, setOut }: Props) {
   return (
     <>
       <div className="g4">
-        <StatCard label="Stock value at cost" value={cedi(totals.value)} sub={`At the end of ${rangeLabel(range)}`} icon="inventory" color="#06b6d4" />
-        <StatCard label="Value at selling price" value={cedi(totals.retail)} icon="pos" color="#00d46a" />
-        <StatCard label="Units bought / sold" value={`${totals.bought.toLocaleString()} / ${totals.sold.toLocaleString()}`} icon="trending" color="#a855f7" />
-        <StatCard label="At or below reorder" value={String(totals.low)} icon="alert" color="#f59e0b" />
+        <StatCard label="Stock value at cost" value={cedi(totals.value)} sub={`At the end of ${rangeLabel(range)}`} icon="inventory" color="var(--c-cyan)" />
+        <StatCard label="Value at selling price" value={cedi(totals.retail)} icon="pos" color="var(--c-accent)" />
+        <StatCard label="Units bought / sold" value={`${totals.bought.toLocaleString()} / ${totals.sold.toLocaleString()}`} icon="trending" color="var(--c-purple)" />
+        <StatCard label="At or below reorder" value={String(totals.low)} icon="alert" color="var(--c-warn)" />
       </div>
       <div className="stat-card">
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -375,13 +375,13 @@ function StockReport({ range, refresh, setOut }: Props) {
               <tbody>
                 {shown.map(r => (
                   <tr key={r.id} className="table-row">
-                    <Td strong style={{ whiteSpace: 'normal' }}>{r.name}{r.sku && <span style={{ color: '#4b5563', fontWeight: 400, fontSize: 11, marginLeft: 6 }}>{r.sku}</span>}</Td>
+                    <Td strong style={{ whiteSpace: 'normal' }}>{r.name}{r.sku && <span style={{ color: 'var(--c-text-4)', fontWeight: 400, fontSize: 11, marginLeft: 6 }}>{r.sku}</span>}</Td>
                     <Td>{r.category}</Td>
                     <Td mono right>{n(r.opening)}</Td>
-                    <Td mono right style={{ color: n(r.bought) ? '#00d46a' : undefined }}>{n(r.bought) ? `+${n(r.bought)}` : 0}</Td>
-                    <Td mono right style={{ color: n(r.sold) ? '#ef4444' : undefined }}>{n(r.sold) ? `−${n(r.sold)}` : 0}</Td>
+                    <Td mono right style={{ color: n(r.bought) ? 'var(--c-good)' : undefined }}>{n(r.bought) ? `+${n(r.bought)}` : 0}</Td>
+                    <Td mono right style={{ color: n(r.sold) ? 'var(--c-danger)' : undefined }}>{n(r.sold) ? `−${n(r.sold)}` : 0}</Td>
                     <Td mono right muted>{n(r.other) > 0 ? `+${n(r.other)}` : n(r.other)}</Td>
-                    <Td mono right strong style={{ color: n(r.closing) <= n(r.reorder_level) ? '#f59e0b' : '#e8ecf4' }}>{n(r.closing)}</Td>
+                    <Td mono right strong style={{ color: n(r.closing) <= n(r.reorder_level) ? 'var(--c-warn)' : 'var(--c-text)' }}>{n(r.closing)}</Td>
                     <Td mono right>{cedi(r.value)}</Td>
                   </tr>
                 ))}
@@ -389,7 +389,7 @@ function StockReport({ range, refresh, setOut }: Props) {
             </table>
           </div>
         )}
-        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 10 }}>Other = stock counts, opening stock, refunds and removals. Closing stock is shown in amber when it is at or below the reorder level.</div>
+        <div style={{ fontSize: 12, color: 'var(--c-text-3)', marginTop: 10 }}>Other = stock counts, opening stock, refunds and removals. Closing stock is shown in amber when it is at or below the reorder level.</div>
       </div>
     </>
   )
@@ -423,16 +423,16 @@ function StatementReport({ range, refresh, setOut }: Props) {
       <div style={{ display: 'flex', gap: 4 }}>
         {ACCOUNTS.map(a => (
           <button key={a} className="tab-btn" onClick={() => setAccount(a)}
-            style={{ background: account === a ? 'rgba(59,130,246,0.14)' : 'transparent', color: account === a ? '#60a5fa' : '#6b7280' }}>{a}</button>
+            style={{ background: account === a ? 'color-mix(in srgb, var(--c-info) 14%, transparent)' : 'transparent', color: account === a ? 'var(--c-info)' : 'var(--c-text-3)' }}>{a}</button>
         ))}
       </div>
       {loading ? <Spinner /> : error ? <ErrorBox>{error}</ErrorBox> : data && (
         <>
           <div className="g4">
-            <StatCard label="Opening balance" value={cedi(data.opening)} icon="accounting" color="#9ca3af" />
-            <StatCard label="Money in" value={cedi(tin)} icon="trending" color="#00d46a" />
-            <StatCard label="Money out" value={cedi(tout)} icon="receipt" color="#ef4444" />
-            <StatCard label="Closing balance" value={cedi(data.closing)} icon="accounting" color="#3b82f6" />
+            <StatCard label="Opening balance" value={cedi(data.opening)} icon="accounting" color="var(--c-text-2)" />
+            <StatCard label="Money in" value={cedi(tin)} icon="trending" color="var(--c-good)" />
+            <StatCard label="Money out" value={cedi(tout)} icon="receipt" color="var(--c-danger)" />
+            <StatCard label="Closing balance" value={cedi(data.closing)} icon="accounting" color="var(--c-info)" />
           </div>
           <div className="stat-card">
             <SectionTitle>{account} statement · {rangeLabel(range)}</SectionTitle>
@@ -445,16 +445,16 @@ function StatementReport({ range, refresh, setOut }: Props) {
                     <tr key={i} className="table-row">
                       <Td mono muted>{r.date}</Td>
                       <Td style={{ whiteSpace: 'normal' }}>{r.description}</Td>
-                      <Td mono right style={{ color: '#00d46a' }}>{n(r.money_in) ? cedi(r.money_in) : ''}</Td>
-                      <Td mono right style={{ color: '#ef4444' }}>{n(r.money_out) ? cedi(r.money_out) : ''}</Td>
+                      <Td mono right style={{ color: 'var(--c-good)' }}>{n(r.money_in) ? cedi(r.money_in) : ''}</Td>
+                      <Td mono right style={{ color: 'var(--c-danger)' }}>{n(r.money_out) ? cedi(r.money_out) : ''}</Td>
                       <Td mono right strong>{cedi(r.balance)}</Td>
                     </tr>
                   ))}
-                  <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}><Td mono muted>{range.to}</Td><Td strong>Closing balance</Td><Td mono right>{cedi(tin)}</Td><Td mono right>{cedi(tout)}</Td><Td mono right strong>{cedi(data.closing)}</Td></tr>
+                  <tr style={{ borderTop: '1px solid color-mix(in srgb, var(--c-ink) 10%, transparent)' }}><Td mono muted>{range.to}</Td><Td strong>Closing balance</Td><Td mono right>{cedi(tin)}</Td><Td mono right>{cedi(tout)}</Td><Td mono right strong>{cedi(data.closing)}</Td></tr>
                 </tbody>
               </table>
             </div>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 10, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: 'var(--c-text-3)', marginTop: 10, lineHeight: 1.6 }}>
               Cash sales go to Cash, card sales to Bank and Mobile Money sales to Mobile Money. Sales are grouped into one line per day. Record deposits and transfers in Accounting → Money in / out.
             </div>
           </div>
@@ -501,9 +501,9 @@ function ExpensesReport({ range, refresh, setOut }: Props) {
   return (
     <>
       <div className="g3">
-        <StatCard label="Total expenses" value={cedi(calc.total)} sub={`${data.length} entries`} icon="receipt" color="#ef4444" />
-        <StatCard label="Biggest category" value={calc.byCat[0]?.[0] ?? '—'} sub={calc.byCat[0] ? cedi(calc.byCat[0][1].total) : undefined} icon="reports" color="#f59e0b" />
-        <StatCard label="Average per day" value={cedi(calc.total / Math.max(1, Math.round((new Date(`${range.to}T00:00:00`).getTime() - new Date(`${range.from}T00:00:00`).getTime()) / 86400000) + 1))} icon="trending" color="#a855f7" />
+        <StatCard label="Total expenses" value={cedi(calc.total)} sub={`${data.length} entries`} icon="receipt" color="var(--c-danger)" />
+        <StatCard label="Biggest category" value={calc.byCat[0]?.[0] ?? '—'} sub={calc.byCat[0] ? cedi(calc.byCat[0][1].total) : undefined} icon="reports" color="var(--c-warn)" />
+        <StatCard label="Average per day" value={cedi(calc.total / Math.max(1, Math.round((new Date(`${range.to}T00:00:00`).getTime() - new Date(`${range.from}T00:00:00`).getTime()) / 86400000) + 1))} icon="trending" color="var(--c-purple)" />
       </div>
       <div className="g-split">
         <div className="stat-card">
@@ -513,10 +513,10 @@ function ExpensesReport({ range, refresh, setOut }: Props) {
               {calc.byCat.map(([k, v]) => (
                 <div key={k}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                    <span style={{ color: '#e8ecf4' }}>{k} <span style={{ color: '#4b5563', fontSize: 11 }}>{v.count}</span></span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#e8ecf4' }}>{cedi(v.total)}</span>
+                    <span style={{ color: 'var(--c-text)' }}>{k} <span style={{ color: 'var(--c-text-4)', fontSize: 11 }}>{v.count}</span></span>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-text)' }}>{cedi(v.total)}</span>
                   </div>
-                  <div className="progress-bar"><div className="progress-fill" style={{ width: `${(v.total / calc.byCat[0][1].total) * 100}%`, background: '#ef4444' }} /></div>
+                  <div className="progress-bar"><div className="progress-fill" style={{ width: `${(v.total / calc.byCat[0][1].total) * 100}%`, background: 'var(--c-danger)' }} /></div>
                 </div>
               ))}
             </div>

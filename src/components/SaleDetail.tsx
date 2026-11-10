@@ -51,8 +51,8 @@ export function SaleDetail({ txnId, onClose, onChanged }: { txnId: number; onClo
           )}
           <Receipt data={data} settings={settings} />
           {refunding ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>Items go back into stock and the customer's loyalty points are taken back. Give the customer {data.total.toFixed(2)} cedis.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, border: '1px solid color-mix(in srgb, var(--c-danger) 25%, transparent)', borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 12, color: 'var(--c-text-2)' }}>Items go back into stock and the customer's loyalty points are taken back. Give the customer {data.total.toFixed(2)} cedis.</div>
               <Field label="Reason *"><input autoFocus className="input-field" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. wrong item, customer returned goods" /></Field>
               <ErrorBox>{error}</ErrorBox>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>

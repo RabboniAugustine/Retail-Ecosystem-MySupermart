@@ -52,16 +52,16 @@ export function SalesHistory({ refresh }: { refresh: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div className="g4">
-        <StatCard label="Revenue" value={cedi(revenue)} sub={`${done.length} sales`} icon="pos" color="#00d46a" />
-        <StatCard label="Average sale" value={done.length ? cedi(revenue / done.length) : '—'} icon="trending" color="#a855f7" />
-        <StatCard label="VAT collected" value={cedi(done.reduce((a, t) => a + Number(t.tax), 0))} icon="reports" color="#3b82f6" />
-        <StatCard label="Refunds" value={refunded.length.toString()} sub={cedi(refunded.reduce((a, t) => a + Number(t.total), 0))} icon="refresh" color="#ef4444" />
+        <StatCard label="Revenue" value={cedi(revenue)} sub={`${done.length} sales`} icon="pos" color="var(--c-accent)" />
+        <StatCard label="Average sale" value={done.length ? cedi(revenue / done.length) : '—'} icon="trending" color="var(--c-purple)" />
+        <StatCard label="VAT collected" value={cedi(done.reduce((a, t) => a + Number(t.tax), 0))} icon="reports" color="var(--c-info)" />
+        <StatCard label="Refunds" value={refunded.length.toString()} sub={cedi(refunded.reduce((a, t) => a + Number(t.total), 0))} icon="refresh" color="var(--c-danger)" />
       </div>
 
       <div className="stat-card">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
           <input className="input-field" type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ width: 150 }} />
-          <span style={{ color: '#4b5563', fontSize: 12 }}>to</span>
+          <span style={{ color: 'var(--c-text-4)', fontSize: 12 }}>to</span>
           <input className="input-field" type="date" value={to} onChange={e => setTo(e.target.value)} style={{ width: 150 }} />
           <select className="input-field" value={staff} onChange={e => setStaff(e.target.value)} style={{ width: 160 }}>
             {staffNames.map(n => <option key={n} value={n}>{n === 'All' ? 'All salespeople' : n}</option>)}
@@ -71,7 +71,7 @@ export function SalesHistory({ refresh }: { refresh: number }) {
           </select>
           <input className="input-field" placeholder="Sale no. or customer" value={search} onChange={e => setSearch(e.target.value)} style={{ flex: '1 1 160px', maxWidth: 240 }} />
           <div style={{ flex: 1 }} />
-          <button onClick={exportCsv} className="pos-key" style={{ padding: '8px 12px', gap: 6, color: '#9ca3af' }}><Icon d={ICONS.download} size={14} /> Export CSV</button>
+          <button onClick={exportCsv} className="pos-key" style={{ padding: '8px 12px', gap: 6, color: 'var(--c-text-2)' }}><Icon d={ICONS.download} size={14} /> Export CSV</button>
         </div>
         {loading ? <Spinner /> : shown.length === 0 ? <EmptyState title="No sales in this period" /> : (
           <div className="table-wrap">

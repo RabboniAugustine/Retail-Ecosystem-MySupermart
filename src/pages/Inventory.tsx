@@ -47,7 +47,7 @@ function ProductFields({ form, setForm, isNew, suppliers }: {
       <div className="g2">
         {isNew
           ? <Field label="Opening stock"><input className="input-field" type="number" min="0" value={form.stock} onChange={set('stock')} /></Field>
-          : <Field label="Stock"><div style={{ fontSize: 12, color: '#6b7280', padding: '10px 0' }}>Use “Stock in / adjust” to change stock.</div></Field>}
+          : <Field label="Stock"><div style={{ fontSize: 12, color: 'var(--c-text-3)', padding: '10px 0' }}>Use “Stock in / adjust” to change stock.</div></Field>}
         <Field label="Reorder level"><input className="input-field" type="number" min="0" value={form.reorder_level} onChange={set('reorder_level')} /></Field>
       </div>
       <div className="g2">
@@ -194,23 +194,23 @@ export function Inventory({ refresh }: { refresh: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div className="g4">
-        <StatCard label="Products" value={rows.length.toString()} sub="Active in the shop" icon="inventory" color="#3b82f6" />
-        <StatCard label="Low / out of stock" value={`${lowCount} / ${outCount}`} sub="At or below reorder level" icon="alert" color={outCount ? '#ef4444' : '#f59e0b'} />
-        <StatCard label="Expiring ≤ 30 days" value={expiringCount.toString()} sub="Check the shelves" icon="history" color="#f59e0b" />
+        <StatCard label="Products" value={rows.length.toString()} sub="Active in the shop" icon="inventory" color="var(--c-info)" />
+        <StatCard label="Low / out of stock" value={`${lowCount} / ${outCount}`} sub="At or below reorder level" icon="alert" color={outCount ? 'var(--c-danger)' : 'var(--c-warn)'} />
+        <StatCard label="Expiring ≤ 30 days" value={expiringCount.toString()} sub="Check the shelves" icon="history" color="var(--c-warn)" />
         {isOwner
-          ? <StatCard label="Stock value" value={cedi(totalValue, 0)} sub="At cost price" icon="accounting" color="#00d46a" />
-          : <StatCard label="Units in stock" value={rows.reduce((s, r) => s + r.stock, 0).toLocaleString()} sub="All products" icon="inventory" color="#00d46a" />}
+          ? <StatCard label="Stock value" value={cedi(totalValue, 0)} sub="At cost price" icon="accounting" color="var(--c-accent)" />
+          : <StatCard label="Units in stock" value={rows.reduce((s, r) => s + r.stock, 0).toLocaleString()} sub="All products" icon="inventory" color="var(--c-accent)" />}
       </div>
 
       <div className="stat-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
-            <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}><Icon d={ICONS.search} size={14} /></div>
+            <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-3)' }}><Icon d={ICONS.search} size={14} /></div>
             <input className="input-field" style={{ paddingLeft: 34 }} placeholder="Search name, SKU, barcode…" value={query} onChange={e => setQuery(e.target.value)} />
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
             {([['all', 'All'], ['low', 'Low stock'], ['expiring', 'Expiring']] as const).map(([k, l]) => (
-              <button key={k} className="tab-btn" onClick={() => setFilter(k)} style={{ background: filter === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: filter === k ? '#00d46a' : '#6b7280' }}>{l}</button>
+              <button key={k} className="tab-btn" onClick={() => setFilter(k)} style={{ background: filter === k ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: filter === k ? 'var(--c-accent)' : 'var(--c-text-3)' }}>{l}</button>
             ))}
           </div>
           <div style={{ flex: 1 }} />
@@ -225,7 +225,7 @@ export function Inventory({ refresh }: { refresh: number }) {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <tr style={{ borderBottom: '1px solid color-mix(in srgb, var(--c-ink) 5%, transparent)' }}>
                   {['Product', 'SKU', 'Category', 'Stock', 'Reorder', 'Expiry', 'Supplier', 'Cost', 'Price'].map(h => <Th key={h}>{h}</Th>)}
                   {isOwner && <Th>Margin</Th>}
                   <Th>Status</Th><Th>Actions</Th>
@@ -238,26 +238,26 @@ export function Inventory({ refresh }: { refresh: number }) {
                   const margin = Number(p.price) > 0 && p.cost != null ? (((Number(p.price) - Number(p.cost)) / Number(p.price)) * 100).toFixed(0) + '%' : '—'
                   const d = daysUntil(row.expiry_date)
                   return (
-                    <tr key={row.id} className="table-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <tr key={row.id} className="table-row" style={{ borderBottom: '1px solid color-mix(in srgb, var(--c-ink) 3%, transparent)' }}>
                       <Td strong>{p.name}</Td>
                       <Td mono muted>{p.sku ?? '—'}</Td>
                       <Td>{p.category}</Td>
-                      <Td mono strong style={{ color: status === 'out' ? '#ef4444' : status === 'low' ? '#f59e0b' : '#e8ecf4' }}>{row.stock}</Td>
+                      <Td mono strong style={{ color: status === 'out' ? 'var(--c-danger)' : status === 'low' ? 'var(--c-warn)' : 'var(--c-text)' }}>{row.stock}</Td>
                       <Td mono muted>{row.reorder_level}</Td>
-                      <Td mono style={{ color: d == null ? '#6b7280' : d < 0 ? '#ef4444' : d <= 30 ? '#f59e0b' : '#6b7280' }}>
+                      <Td mono style={{ color: d == null ? 'var(--c-text-3)' : d < 0 ? 'var(--c-danger)' : d <= 30 ? 'var(--c-warn)' : 'var(--c-text-3)' }}>
                         {row.expiry_date ?? '—'}{d != null && d < 0 ? ' (expired)' : ''}
                       </Td>
                       <Td>{row.supplier ?? '—'}</Td>
                       <Td mono muted>{cedi(p.cost)}</Td>
                       <Td mono strong>{cedi(p.price)}</Td>
-                      {isOwner && <Td style={{ color: '#00d46a', fontWeight: 600 }}>{margin}</Td>}
+                      {isOwner && <Td style={{ color: 'var(--c-good)', fontWeight: 600 }}>{margin}</Td>}
                       <Td><span className={`badge ${status === 'out' ? 'badge-red' : status === 'low' ? 'badge-yellow' : 'badge-green'}`}>{status === 'out' ? 'Out' : status === 'low' ? 'Low' : 'OK'}</span></Td>
                       <Td>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button onClick={() => { setFormError(''); setAdj({ mode: 'add', qty: '', reason: 'Delivery received', note: '' }); setAdjRow(row) }} title="Stock in / adjust"
-                            style={{ background: 'rgba(0,212,106,0.1)', border: '1px solid rgba(0,212,106,0.25)', color: '#00d46a', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>± Stock</button>
-                          <button onClick={() => openEdit(row)} title="Edit product" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button>
-                          {isOwner && <button onClick={() => { setDelRow(row); setDelReason(''); setDelNote(''); setFormError('') }} title="Remove product" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.trash} size={14} /></button>}
+                            style={{ background: 'color-mix(in srgb, var(--c-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--c-accent) 25%, transparent)', color: 'var(--c-accent)', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>± Stock</button>
+                          <button onClick={() => openEdit(row)} title="Edit product" style={{ background: 'color-mix(in srgb, var(--c-ink) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--c-ink) 8%, transparent)', color: 'var(--c-text-2)', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.edit} size={14} /></button>
+                          {isOwner && <button onClick={() => { setDelRow(row); setDelReason(''); setDelNote(''); setFormError('') }} title="Remove product" style={{ background: 'color-mix(in srgb, var(--c-danger) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--c-danger) 20%, transparent)', color: 'var(--c-danger)', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' }}><Icon d={ICONS.trash} size={14} /></button>}
                         </div>
                       </Td>
                     </tr>
@@ -286,10 +286,10 @@ export function Inventory({ refresh }: { refresh: number }) {
       {adjRow && (
         <Modal title={`Stock: ${adjRow.ms_products.name}`} onClose={() => setAdjRow(null)} width={440}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ fontSize: 13, color: '#9ca3af' }}>Currently <b style={{ color: '#e8ecf4' }}>{adjRow.stock}</b> in stock.</div>
-            <div style={{ display: 'flex', gap: 4, background: '#06080f', padding: 4, borderRadius: 8 }}>
+            <div style={{ fontSize: 13, color: 'var(--c-text-2)' }}>Currently <b style={{ color: 'var(--c-text)' }}>{adjRow.stock}</b> in stock.</div>
+            <div style={{ display: 'flex', gap: 4, background: 'var(--c-bg)', padding: 4, borderRadius: 8 }}>
               {([['add', 'Add / remove units'], ['set', 'Set counted amount']] as const).map(([k, l]) => (
-                <button key={k} className="tab-btn" style={{ flex: 1, background: adj.mode === k ? 'rgba(0,212,106,0.12)' : 'transparent', color: adj.mode === k ? '#00d46a' : '#6b7280' }}
+                <button key={k} className="tab-btn" style={{ flex: 1, background: adj.mode === k ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: adj.mode === k ? 'var(--c-accent)' : 'var(--c-text-3)' }}
                   onClick={() => setAdj(a => ({ ...a, mode: k, reason: k === 'set' ? 'Stock count correction' : 'Delivery received' }))}>{l}</button>
               ))}
             </div>
@@ -297,7 +297,7 @@ export function Inventory({ refresh }: { refresh: number }) {
               <input autoFocus className="input-field" type="number" step="1" value={adj.qty} onChange={e => setAdj(a => ({ ...a, qty: e.target.value }))} />
             </Field>
             {adj.qty !== '' && Number.isInteger(Number(adj.qty)) && (
-              <div style={{ fontSize: 12, color: '#6b7280' }}>New stock will be <b style={{ color: '#e8ecf4' }}>{adj.mode === 'add' ? adjRow.stock + Number(adj.qty) : Number(adj.qty)}</b></div>
+              <div style={{ fontSize: 12, color: 'var(--c-text-3)' }}>New stock will be <b style={{ color: 'var(--c-text)' }}>{adj.mode === 'add' ? adjRow.stock + Number(adj.qty) : Number(adj.qty)}</b></div>
             )}
             <div className="g2">
               <Field label="Reason">
@@ -319,8 +319,8 @@ export function Inventory({ refresh }: { refresh: number }) {
       {delRow && (
         <Modal title="Remove product" onClose={() => setDelRow(null)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
-              You are removing <b style={{ color: '#e8ecf4' }}>{delRow.ms_products.name}</b> ({delRow.stock} units, {cedi(delRow.stock * Number(delRow.ms_products.cost ?? 0))} at cost).
+            <div style={{ fontSize: 13, color: 'var(--c-text-2)', lineHeight: 1.5 }}>
+              You are removing <b style={{ color: 'var(--c-text)' }}>{delRow.ms_products.name}</b> ({delRow.stock} units, {cedi(delRow.stock * Number(delRow.ms_products.cost ?? 0))} at cost).
               It will disappear from the till and stock list. Past sales and reports are kept.
             </div>
             <Field label="Reason *">
@@ -343,15 +343,15 @@ export function Inventory({ refresh }: { refresh: number }) {
 
       {log === 'removals' && (
         <Modal title="Removal log" onClose={() => setLog(null)} width={620}>
-          {removals.length === 0 ? <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: 20 }}>No products removed yet.</div> : (
+          {removals.length === 0 ? <div style={{ fontSize: 13, color: 'var(--c-text-3)', textAlign: 'center', padding: 20 }}>No products removed yet.</div> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>Total value removed (at cost): <b style={{ color: '#e8ecf4' }}>{cedi(removals.reduce((a, r) => a + Number(r.loss_value), 0))}</b></div>
+              <div style={{ fontSize: 12, color: 'var(--c-text-2)' }}>Total value removed (at cost): <b style={{ color: 'var(--c-text)' }}>{cedi(removals.reduce((a, r) => a + Number(r.loss_value), 0))}</b></div>
               {removals.map(r => (
-                <div key={r.id} style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 13, color: '#e8ecf4', fontWeight: 600 }}>
+                <div key={r.id} style={{ border: '1px solid color-mix(in srgb, var(--c-ink) 6%, transparent)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 13, color: 'var(--c-text)', fontWeight: 600 }}>
                     <span>{r.product_name}</span><span>{r.quantity} units · {cedi(r.loss_value)}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--c-text-2)', marginTop: 4 }}>
                     {r.reason}{r.note ? ` — ${r.note}` : ''} · {dateTime(r.removed_at)}{r.removed_by_name ? ` · ${r.removed_by_name}` : ''}
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export function Inventory({ refresh }: { refresh: number }) {
 
       {log === 'movements' && (
         <Modal title="Stock log" onClose={() => setLog(null)} width={760}>
-          {movements.length === 0 ? <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: 20 }}>No stock changes recorded yet. Sales are not listed here; see Sales history.</div> : (
+          {movements.length === 0 ? <div style={{ fontSize: 13, color: 'var(--c-text-3)', textAlign: 'center', padding: 20 }}>No stock changes recorded yet. Sales are not listed here; see Sales history.</div> : (
             <div className="table-wrap">
               <table>
                 <thead><tr><Th>When</Th><Th>Product</Th><Th right>Change</Th><Th right>Before → after</Th><Th>Reason</Th><Th>By</Th></tr></thead>
@@ -372,7 +372,7 @@ export function Inventory({ refresh }: { refresh: number }) {
                     <tr key={m.id} className="table-row">
                       <Td mono muted>{dateTime(m.created_at)}</Td>
                       <Td strong>{m.product_name}</Td>
-                      <Td mono right style={{ color: m.change >= 0 ? '#00d46a' : '#ef4444', fontWeight: 700 }}>{m.change > 0 ? '+' : ''}{m.change}</Td>
+                      <Td mono right style={{ color: m.change >= 0 ? 'var(--c-good)' : 'var(--c-danger)', fontWeight: 700 }}>{m.change > 0 ? '+' : ''}{m.change}</Td>
                       <Td mono right muted>{m.old_stock} → {m.new_stock}</Td>
                       <Td style={{ whiteSpace: 'normal' }}>{m.reason}</Td>
                       <Td>{m.created_by_name ?? '—'}</Td>

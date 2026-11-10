@@ -198,19 +198,19 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden', minHeight: 0 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}><Icon d={ICONS.search} size={15} /></div>
+            <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-3)' }}><Icon d={ICONS.search} size={15} /></div>
             <input ref={searchRef} autoFocus className="input-field" style={{ paddingLeft: 34 }} placeholder="Scan barcode or search, then Enter…"
               value={search} onChange={e => setSearch(e.target.value)} onKeyDown={onSearchKey} />
           </div>
           <Btn variant="ghost" onClick={showCustomerScreen}><Icon d={ICONS.monitor} size={14} /> Customer screen</Btn>
         </div>
         {displayMsg && (
-          <div style={{ fontSize: 12, color: displayMsg.warn ? '#f59e0b' : '#9ca3af', marginTop: -4 }}>{displayMsg.text}</div>
+          <div style={{ fontSize: 12, color: displayMsg.warn ? 'var(--c-warn)' : 'var(--c-text-2)', marginTop: -4 }}>{displayMsg.text}</div>
         )}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setCategory(cat)} className="tab-btn"
-              style={{ background: category === cat ? 'rgba(0,212,106,0.12)' : 'transparent', color: category === cat ? '#00d46a' : '#6b7280' }}>
+              style={{ background: category === cat ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: category === cat ? 'var(--c-accent)' : 'var(--c-text-3)' }}>
               {cat}
             </button>
           ))}
@@ -224,17 +224,17 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
               const out = stock <= 0 && settings.block_oversell
               return (
                 <button key={p.id} onClick={() => !out && addToCart(p)} disabled={out}
-                  style={{ textAlign: 'left', background: '#0d1120', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: 12, cursor: out ? 'not-allowed' : 'pointer', opacity: out ? 0.45 : 1, color: 'inherit', font: 'inherit' }}
-                  onMouseEnter={e => { if (!out) e.currentTarget.style.borderColor = 'rgba(0,212,106,0.35)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: 1, background: CATEGORY_COLORS[p.category] ?? CATEGORY_COLORS.Default }} />
+                  style={{ textAlign: 'left', background: 'var(--c-panel)', border: '1px solid color-mix(in srgb, var(--c-ink) 6%, transparent)', borderRadius: 10, padding: 12, cursor: out ? 'not-allowed' : 'pointer', opacity: out ? 0.45 : 1, color: 'inherit', font: 'inherit' }}
+                  onMouseEnter={e => { if (!out) e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--c-accent) 35%, transparent)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--c-ink) 6%, transparent)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 10, color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 1, background: `var(--c-cat-dot, ${CATEGORY_COLORS[p.category] ?? CATEGORY_COLORS.Default})` }} />
                     {p.category}
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#e8ecf4', marginBottom: 3, lineHeight: 1.3, minHeight: 31 }}>{p.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text)', marginBottom: 3, lineHeight: 1.3, minHeight: 31 }}>{p.name}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#00d46a', fontFamily: 'Roboto Slab, serif' }}>{cedi(p.price)}</div>
-                    <span style={{ fontSize: 10, color: stock <= 0 ? '#ef4444' : stock <= reorder ? '#f59e0b' : '#4b5563', fontFamily: 'JetBrains Mono, monospace' }}>{stock <= 0 ? 'OUT' : stock}</span>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-good)', fontFamily: 'Roboto Slab, serif' }}>{cedi(p.price)}</div>
+                    <span style={{ fontSize: 10, color: stock <= 0 ? 'var(--c-danger)' : stock <= reorder ? 'var(--c-warn)' : 'var(--c-text-4)', fontFamily: 'JetBrains Mono, monospace' }}>{stock <= 0 ? 'OUT' : stock}</span>
                   </div>
                 </button>
               )
@@ -247,54 +247,54 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
       <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 16, minHeight: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'Roboto Slab, serif', fontSize: 16, fontWeight: 700, margin: 0 }}>Order</h3>
-          {cart.length > 0 && <button onClick={clearSale} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 12 }}>Clear</button>}
+          {cart.length > 0 && <button onClick={clearSale} style={{ background: 'none', border: 'none', color: 'var(--c-text-3)', cursor: 'pointer', fontSize: 12 }}>Clear</button>}
         </div>
 
-        <button onClick={() => setShowCustomer(true)} className="pos-key" style={{ justifyContent: 'space-between', padding: '8px 12px', color: customer ? '#e8ecf4' : '#6b7280' }}>
+        <button onClick={() => setShowCustomer(true)} className="pos-key" style={{ justifyContent: 'space-between', padding: '8px 12px', color: customer ? 'var(--c-text)' : 'var(--c-text-3)' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon d={ICONS.crm} size={14} />{customer ? customer.name : 'Walk-in customer'}</span>
-          <span style={{ fontSize: 11, color: '#00d46a' }}>{customer ? `${customer.points} pts · change` : 'Add loyalty'}</span>
+          <span style={{ fontSize: 11, color: 'var(--c-accent)' }}>{customer ? `${customer.points} pts · change` : 'Add loyalty'}</span>
         </button>
 
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', minHeight: 80 }}>
           {cart.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 0', color: '#4b5563', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--c-text-4)', fontSize: 13 }}>
               Scan or tap a product to add
             </div>
           ) : cart.map(l => (
-            <div key={l.product.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <div key={l.product.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid color-mix(in srgb, var(--c-ink) 4%, transparent)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e8ecf4', lineHeight: 1.3 }}>{l.product.name}</div>
-                <div style={{ fontSize: 11, color: '#4b5563' }}>{cedi(l.product.price)} each</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-text)', lineHeight: 1.3 }}>{l.product.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--c-text-4)' }}>{cedi(l.product.price)} each</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <button onClick={() => setQty(l.product.id, l.qty - 1)} className="pos-key" style={{ width: 26, height: 26, fontSize: 14 }} aria-label="Less">−</button>
                 <input value={l.qty} onChange={e => setQty(l.product.id, Number(e.target.value))} inputMode="numeric"
-                  style={{ width: 34, textAlign: 'center', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, color: '#e8ecf4', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, padding: '3px 0' }} />
+                  style={{ width: 34, textAlign: 'center', background: 'transparent', border: '1px solid color-mix(in srgb, var(--c-ink) 8%, transparent)', borderRadius: 6, color: 'var(--c-text)', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, padding: '3px 0' }} />
                 <button onClick={() => setQty(l.product.id, l.qty + 1)} className="pos-key" style={{ width: 26, height: 26, fontSize: 14 }} aria-label="More">+</button>
               </div>
-              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, minWidth: 64, textAlign: 'right', color: '#e8ecf4' }}>{cedi(Number(l.product.price) * l.qty)}</div>
-              <button onClick={() => setCart(prev => prev.filter(x => x.product.id !== l.product.id))} style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: 2 }} aria-label="Remove"><Icon d={ICONS.x} size={13} /></button>
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, minWidth: 64, textAlign: 'right', color: 'var(--c-text)' }}>{cedi(Number(l.product.price) * l.qty)}</div>
+              <button onClick={() => setCart(prev => prev.filter(x => x.product.id !== l.product.id))} style={{ background: 'none', border: 'none', color: 'var(--c-text-4)', cursor: 'pointer', padding: 2 }} aria-label="Remove"><Icon d={ICONS.x} size={13} /></button>
             </div>
           ))}
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 9 }}>
+        <div style={{ borderTop: '1px solid color-mix(in srgb, var(--c-ink) 7%, transparent)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 9 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, color: '#6b7280', flex: 1 }}>Discount % {isOwner ? '' : <span style={{ color: '#4b5563' }}>(max {maxDiscount}%)</span>}</span>
+            <span style={{ fontSize: 12, color: 'var(--c-text-3)', flex: 1 }}>Discount % {isOwner ? '' : <span style={{ color: 'var(--c-text-4)' }}>(max {maxDiscount}%)</span>}</span>
             <input className="input-field" type="number" min={0} max={maxDiscount} style={{ width: 80, padding: '6px 10px' }} value={discount || ''}
               onChange={e => setDiscount(Math.min(maxDiscount, Math.max(0, Number(e.target.value))))} placeholder="0" />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6b7280' }}><span>Subtotal</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cedi(subtotal)}</span></div>
-            {discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00d46a' }}><span>Discount ({discount}%)</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>−{cedi(discountAmt)}</span></div>}
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6b7280' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cedi(tax)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e8ecf4', fontWeight: 700, fontSize: 18, fontFamily: 'Roboto Slab, serif', paddingTop: 5, borderTop: '1px solid rgba(255,255,255,0.07)' }}><span>Total</span><span>{cedi(total)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--c-text-3)' }}><span>Subtotal</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cedi(subtotal)}</span></div>
+            {discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--c-accent)' }}><span>Discount ({discount}%)</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>−{cedi(discountAmt)}</span></div>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--c-text-3)' }}><span>VAT ({vatRate}%)</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cedi(tax)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--c-text)', fontWeight: 700, fontSize: 18, fontFamily: 'Roboto Slab, serif', paddingTop: 5, borderTop: '1px solid color-mix(in srgb, var(--c-ink) 7%, transparent)' }}><span>Total</span><span>{cedi(total)}</span></div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
             {PAYMENT_METHODS.map(m => (
-              <button key={m} onClick={() => setPayMethod(m)} className="pos-key" style={{ height: 34, fontSize: 11, background: payMethod === m ? 'rgba(0,212,106,0.1)' : undefined, borderColor: payMethod === m ? 'rgba(0,212,106,0.35)' : undefined, color: payMethod === m ? '#00d46a' : undefined }}>{m}</button>
+              <button key={m} onClick={() => setPayMethod(m)} className="pos-key" style={{ height: 34, fontSize: 11, background: payMethod === m ? 'color-mix(in srgb, var(--c-accent) 10%, transparent)' : undefined, borderColor: payMethod === m ? 'color-mix(in srgb, var(--c-accent) 35%, transparent)' : undefined, color: payMethod === m ? 'var(--c-accent)' : undefined }}>{m}</button>
             ))}
           </div>
 
@@ -303,7 +303,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input className="input-field" type="number" min={0} step="0.01" placeholder="Cash received (optional)" value={tendered} onChange={e => setTendered(e.target.value)} style={{ padding: '7px 10px' }} />
                 {change != null && (
-                  <div style={{ minWidth: 110, textAlign: 'right', fontSize: 12, color: change < 0 ? '#ef4444' : '#ef4444', fontWeight: 700 }}>
+                  <div style={{ minWidth: 110, textAlign: 'right', fontSize: 12, color: change < 0 ? 'var(--c-danger)' : 'var(--c-danger)', fontWeight: 700 }}>
                     {change < 0 ? `Short ${cedi(-change)}` : `Change ${cedi(change)}`}
                   </div>
                 )}
@@ -316,7 +316,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
 
           <ErrorBox>{error}</ErrorBox>
           <button onClick={handleCheckout} disabled={!cart.length || processing}
-            style={{ background: !cart.length ? 'rgba(255,255,255,0.04)' : '#00d46a', color: !cart.length ? '#4b5563' : '#03120a', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 14, fontWeight: 700, cursor: (!cart.length || processing) ? 'default' : 'pointer', opacity: processing ? 0.7 : 1 }}>
+            style={{ background: !cart.length ? 'color-mix(in srgb, var(--c-ink) 4%, transparent)' : 'var(--c-accent)', color: !cart.length ? 'var(--c-text-4)' : 'var(--c-on-accent)', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 14, fontWeight: 700, cursor: (!cart.length || processing) ? 'default' : 'pointer', opacity: processing ? 0.7 : 1 }}>
             {processing ? 'Processing…' : `Charge ${cedi(total)} · ${payMethod}`}
           </button>
         </div>
@@ -334,9 +334,9 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
         <Modal title="Sale complete" onClose={closeReceipt} width={420}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {receipt.change != null && (
-              <div style={{ textAlign: 'center', padding: 12, borderRadius: 10, background: 'rgba(0,212,106,0.08)', border: '1px solid rgba(0,212,106,0.25)' }}>
-                <div style={{ fontSize: 12, color: '#9ca3af' }}>Give change</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: '#00d46a', fontFamily: 'Roboto Slab, serif' }}>{cedi(receipt.change)}</div>
+              <div style={{ textAlign: 'center', padding: 12, borderRadius: 10, background: 'color-mix(in srgb, var(--c-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--c-accent) 25%, transparent)' }}>
+                <div style={{ fontSize: 12, color: 'var(--c-text-2)' }}>Give change</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--c-accent)', fontFamily: 'Roboto Slab, serif' }}>{cedi(receipt.change)}</div>
               </div>
             )}
             <Receipt data={receipt} settings={settings} />
@@ -389,11 +389,11 @@ function CustomerPicker({ onClose, onPick, onClear }: { onClose: () => void; onP
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input autoFocus className="input-field" placeholder="Search name, phone or code…" value={term} onChange={e => setTerm(e.target.value)} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
-            {results.length === 0 && <div style={{ fontSize: 13, color: '#6b7280', padding: 10, textAlign: 'center' }}>No customers found.</div>}
+            {results.length === 0 && <div style={{ fontSize: 13, color: 'var(--c-text-3)', padding: 10, textAlign: 'center' }}>No customers found.</div>}
             {results.map(c => (
-              <button key={c.id} onClick={() => onPick(c)} className="pos-key" style={{ justifyContent: 'space-between', padding: '9px 12px', color: '#e8ecf4' }}>
-                <span style={{ textAlign: 'left' }}>{c.name}<span style={{ color: '#6b7280', fontWeight: 400, marginLeft: 8, fontSize: 12 }}>{c.phone ?? c.customer_code}</span></span>
-                <span style={{ fontSize: 11, color: '#00d46a' }}>{c.points} pts · {c.tier}</span>
+              <button key={c.id} onClick={() => onPick(c)} className="pos-key" style={{ justifyContent: 'space-between', padding: '9px 12px', color: 'var(--c-text)' }}>
+                <span style={{ textAlign: 'left' }}>{c.name}<span style={{ color: 'var(--c-text-3)', fontWeight: 400, marginLeft: 8, fontSize: 12 }}>{c.phone ?? c.customer_code}</span></span>
+                <span style={{ fontSize: 11, color: 'var(--c-accent)' }}>{c.points} pts · {c.tier}</span>
               </button>
             ))}
           </div>
