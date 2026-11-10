@@ -303,7 +303,7 @@ export function POS({ onSaleComplete }: { onSaleComplete: () => void }) {
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input className="input-field" type="number" min={0} step="0.01" placeholder="Cash received (optional)" value={tendered} onChange={e => setTendered(e.target.value)} style={{ padding: '7px 10px' }} />
                 {change != null && (
-                  <div style={{ minWidth: 110, textAlign: 'right', fontSize: 12, color: change < 0 ? '#ef4444' : '#00d46a', fontWeight: 700 }}>
+                  <div style={{ minWidth: 110, textAlign: 'right', fontSize: 12, color: change < 0 ? '#ef4444' : '#ef4444', fontWeight: 700 }}>
                     {change < 0 ? `Short ${cedi(-change)}` : `Change ${cedi(change)}`}
                   </div>
                 )}
