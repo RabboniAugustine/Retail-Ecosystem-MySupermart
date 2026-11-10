@@ -1,0 +1,11 @@
+{
+  "title": "My Supermart",
+  "description": "Comprehensive retail platform streamlining sales, inventory, customer loyalty, and analytics to boost supermarket efficiency and customer satisfaction.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
