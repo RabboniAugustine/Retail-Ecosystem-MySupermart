@@ -133,3 +133,14 @@ export const report = <T>(name: 'sales' | 'pnl' | 'stock', from: string, to: str
   rpc<T>(`ms_report_${name}`, { p_from: from, p_to: to, p_tz: TZ })
 export const statementReport = <T>(account: Account, from: string, to: string) =>
   rpc<T>('ms_report_statement', { p_account: account, p_from: from, p_to: to, p_tz: TZ })
+
+// Owner: delete a sale completely (stock, points and money are put back).
+export const deleteSale = (txnId: number, reason: string) =>
+  rpc<void>('ms_delete_sale', { p_txn_id: txnId, p_reason: reason })
+
+export type DeletedRecord = {
+  id: number; record_type: string; record_code: string | null; amount: number | null; reason: string
+  deleted_by_name: string | null; deleted_at: string
+  snapshot: { created_at?: string; cashier_name?: string; payment_method?: string; status?: string; customer_name?: string | null
+    items?: { product_name: string | null; quantity: number; unit_price: number }[] }
+}

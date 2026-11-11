@@ -80,8 +80,9 @@ In the Supabase **SQL Editor**, open each file, paste it and click **Run**, **in
 3. `supabase/migrations/003_pos_functions.sql` — checkout, refunds, stock changes
 4. `supabase/migrations/004_owner_creates_staff.sql` — owner creates staff logins
 5. `supabase/migrations/005_accounting_reports_utilities.sql` — purchases, money accounts, reports, import / bulk update
+6. `supabase/migrations/006_delete_sales.sql` — owner can delete sales (kept in a deleted-sales log)
 
-All five are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them in order. Existing products, customers and sales are kept.
+All six are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them in order. Existing products, customers and sales are kept.
 
 Then in Supabase **Authentication**:
 
@@ -115,7 +116,7 @@ Every other stock change (deliveries, stock counts, refunds, removals) goes thro
 
 - Logged-out visitors cannot read or change anything.
 - Salespeople only see their own sales and cannot see expenses, supplier balances, the stock and removal logs or other staff.
-- Only the owner can refund sales, remove products, change settings and manage staff.
+- Only the owner can refund or delete sales (every deleted sale is kept in Sales & Refunds → Deleted sales), remove products, change settings and manage staff.
 - The anon key in `utils/supabase/info.tsx` is designed to be public. Never put the `service_role` key in this repository.
 
 ## Roadmap

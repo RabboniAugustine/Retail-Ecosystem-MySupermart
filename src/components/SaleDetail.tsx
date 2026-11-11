@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
-import { supabase, refundSale } from '../lib/api'
+import { supabase, refundSale, deleteSale } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import type { Transaction } from '../lib/types'
 import { Btn, ErrorBox, Field, Icon, ICONS, Modal, Spinner } from './ui'
 import { PrintButton, Receipt, type ReceiptData } from './Receipt'
 
-/** Shows a past sale as a receipt, with reprint, and refund for the owner. */
+/** Shows a past sale as a receipt, with reprint, and refund / delete for the owner. */
 export function SaleDetail({ txnId, onClose, onChanged }: { txnId: number; onClose: () => void; onChanged?: () => void }) {
   const { profile, settings } = useAuth()
   const [txn, setTxn] = useState<Transaction | null>(null)
   const [refunding, setRefunding] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -28,6 +29,15 @@ export function SaleDetail({ txnId, onClose, onChanged }: { txnId: number; onClo
       await refundSale(txnId, reason)
       setRefunding(false); await load(); onChanged?.()
     } catch (e) { setError(e instanceof Error ? e.message : 'Refund failed') }
+    setBusy(false)
+  }
+
+  const doDelete = async () => {
+    setBusy(true); setError('')
+    try {
+      await deleteSale(txnId, reason)
+      onChanged?.(); onClose()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Delete failed') }
     setBusy(false)
   }
 
@@ -60,9 +70,24 @@ export function SaleDetail({ txnId, onClose, onChanged }: { txnId: number; onClo
                 <Btn variant="danger" onClick={doRefund} disabled={busy || !reason.trim()}>{busy ? 'Refunding…' : 'Confirm refund'}</Btn>
               </div>
             </div>
+          ) : deleting ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, border: '1px solid color-mix(in srgb, var(--c-danger) 25%, transparent)', borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 12, color: 'var(--c-text-2)', lineHeight: 1.5 }}>
+                <b style={{ color: 'var(--c-danger)' }}>Delete this sale permanently?</b> It is removed from all reports and accounts as if it never happened.
+                {txn.status === 'Refunded' ? ' It was already refunded, so stock is not changed.' : ' The items go back into stock and the customer\'s points are taken back.'}
+                {' '}A copy is kept in the deleted sales log. Use Refund instead if the customer returned goods.
+              </div>
+              <Field label="Reason *"><input autoFocus className="input-field" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. test sale, rung up twice" /></Field>
+              <ErrorBox>{error}</ErrorBox>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <Btn variant="ghost" onClick={() => setDeleting(false)}>Cancel</Btn>
+                <Btn variant="danger" onClick={doDelete} disabled={busy || !reason.trim()}>{busy ? 'Deleting…' : 'Delete sale'}</Btn>
+              </div>
+            </div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              {profile?.role === 'owner' && txn.status !== 'Refunded' && <Btn variant="danger" onClick={() => setRefunding(true)}>Refund</Btn>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+              {profile?.role === 'owner' && <Btn variant="ghost" onClick={() => { setReason(''); setError(''); setDeleting(true) }}><Icon d={ICONS.trash} size={14} /> Delete</Btn>}
+              {profile?.role === 'owner' && txn.status !== 'Refunded' && <Btn variant="danger" onClick={() => { setReason(''); setError(''); setRefunding(true) }}>Refund</Btn>}
               <PrintButton />
               <Btn onClick={onClose}>Close</Btn>
             </div>
