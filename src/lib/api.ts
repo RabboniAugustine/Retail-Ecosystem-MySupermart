@@ -115,8 +115,18 @@ export const payPurchase = (id: number, amount: number, account: Account, date: 
 
 export const voidPurchase = (id: number, reason: string) => rpc<void>('ms_void_purchase', { p_purchase_id: id, p_reason: reason })
 
-export const moneyEntry = (kind: 'transfer' | 'money_in' | 'money_out', amount: number, from: Account | null, to: Account | null, description: string, date: string) =>
-  rpc<void>('ms_money_entry', { p_kind: kind, p_amount: amount, p_from: from, p_to: to, p_description: description, p_date: date })
+/** at: the date and time of the entry, as an ISO timestamp. */
+export const moneyEntry = (kind: 'transfer' | 'money_in' | 'money_out', amount: number, from: Account | null, to: Account | null, description: string, at: string) =>
+  rpc<string>('ms_money_entry', { p_kind: kind, p_amount: amount, p_from: from, p_to: to, p_description: description, p_at: at })
+
+/** Owner: delete a wrong money in / out entry (both sides of a transfer). */
+export const deleteMoneyEntry = (group: string, reason: string) =>
+  rpc<void>('ms_delete_money_entry', { p_group: group, p_reason: reason })
+
+export type MoneyLine = {
+  id: number; account: Account; amount: number; kind: 'transfer' | 'money_in' | 'money_out'; description: string
+  occurred_at: string; created_by_name: string | null; entry_group: string
+}
 
 export const accountBalances = () => rpc<Record<Account, number>>('ms_account_balances', {})
 

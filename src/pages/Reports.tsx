@@ -396,7 +396,11 @@ function StockReport({ range, refresh, setOut }: Props) {
 }
 
 // ── Bank statement ───────────────────────────────────────────────────────────
-type StatementData = { opening: number; closing: number; lines: { date: string; description: string; kind: string; money_in: number; money_out: number }[] }
+type StatementData = { opening: number; closing: number; lines: { date: string; at?: string; description: string; kind: string; money_in: number; money_out: number }[] }
+
+/** Date, plus the time for everything except the daily sales total. */
+const lineWhen = (l: { date: string; at?: string; kind: string }) =>
+  l.kind === 'sale' || !l.at ? l.date : `${l.date} ${new Date(l.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
 
 function StatementReport({ range, refresh, setOut }: Props) {
   const [account, setAccount] = useState<Account>('Bank')
@@ -414,7 +418,7 @@ function StatementReport({ range, refresh, setOut }: Props) {
     setOut({ title: `${account} statement`, subtitle: rangeLabel(range),
       summary: [{ label: 'Opening balance', value: cedi(data.opening) }, { label: 'Money in', value: cedi(tin) }, { label: 'Money out', value: cedi(tout) }, { label: 'Closing balance', value: cedi(data.closing) }],
       tables: [{ title: `${account} statement`, columns: [{ label: 'Date' }, { label: 'Description' }, { label: 'Money in', align: 'right', money: true }, { label: 'Money out', align: 'right', money: true }, { label: 'Balance', align: 'right', money: true }],
-        rows: [[range.from, 'Opening balance', null, null, money(data.opening)], ...rows.map(r => [r.date, r.description, n(r.money_in) ? money(r.money_in) : null, n(r.money_out) ? money(r.money_out) : null, money(r.balance)]), [range.to, 'Closing balance', money(tin), money(tout), money(data.closing)]] }] })
+        rows: [[range.from, 'Opening balance', null, null, money(data.opening)], ...rows.map(r => [lineWhen(r), r.description, n(r.money_in) ? money(r.money_in) : null, n(r.money_out) ? money(r.money_out) : null, money(r.balance)]), [range.to, 'Closing balance', money(tin), money(tout), money(data.closing)]] }] })
   }, [data, rows, account, range, setOut])
 
   const tin = rows.reduce((s, r) => s + n(r.money_in), 0), tout = rows.reduce((s, r) => s + n(r.money_out), 0)
@@ -443,7 +447,7 @@ function StatementReport({ range, refresh, setOut }: Props) {
                   <tr><Td mono muted>{range.from}</Td><Td strong>Opening balance</Td><Td /><Td /><Td mono right strong>{cedi(data.opening)}</Td></tr>
                   {rows.map((r, i) => (
                     <tr key={i} className="table-row">
-                      <Td mono muted>{r.date}</Td>
+                      <Td mono muted>{lineWhen(r)}</Td>
                       <Td style={{ whiteSpace: 'normal' }}>{r.description}</Td>
                       <Td mono right style={{ color: 'var(--c-good)' }}>{n(r.money_in) ? cedi(r.money_in) : ''}</Td>
                       <Td mono right style={{ color: 'var(--c-danger)' }}>{n(r.money_out) ? cedi(r.money_out) : ''}</Td>

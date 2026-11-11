@@ -82,8 +82,9 @@ In the Supabase **SQL Editor**, open each file, paste it and click **Run**, **in
 5. `supabase/migrations/005_accounting_reports_utilities.sql` — purchases, money accounts, reports, import / bulk update
 6. `supabase/migrations/006_delete_sales.sql` — owner can delete sales (kept in a deleted-sales log)
 7. `supabase/migrations/007_repair_legacy_tables.sql` — adds columns missing from tables made by the original version of the app
+8. `supabase/migrations/008_money_entries_time_delete.sql` — date and time on money in / out entries; owner can delete a wrong entry
 
-All seven are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them (001 → 007) in order. Existing products, customers and sales are kept.
+All eight are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them (001 → 008) in order. Existing products, customers and sales are kept.
 
 Then in Supabase **Authentication**:
 
@@ -111,7 +112,7 @@ Every other stock change (deliveries, stock counts, refunds, removals) goes thro
 - **Money accounts:** Cash, Bank and Mobile Money. Cash sales go to Cash, card sales to Bank and MoMo sales to Mobile Money; refunds take the money back out of the same account.
 - **Add purchase:** stock bought from a supplier. Stock goes up, the item's cost price becomes the new cost, and you can set a new selling price. Pay in full, in part or on credit; anything unpaid is added to the supplier's balance and can be paid later from the purchase. The owner can void a purchase entered by mistake.
 - **Add expense:** rent, transport, utilities and so on, paid from one of the accounts. Salespeople can add; only the owner can delete.
-- **Money in / out (owner):** transfers between accounts (e.g. depositing cash in the bank), opening balances, and owner withdrawals. These are what make the Bank Statement match your real bank.
+- **Money in / out (owner):** transfers between accounts (e.g. depositing cash in the bank), opening balances, and owner withdrawals, each with its date and time. These are what make the Bank Statement match your real bank. They are listed in Accounting → Money in / out, where the owner can delete a wrong entry (a copy is kept in Deleted entries).
 
 ## Security
 

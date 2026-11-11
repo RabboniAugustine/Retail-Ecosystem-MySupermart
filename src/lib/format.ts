@@ -22,4 +22,14 @@ export const startOfToday = () => {
 export const dateTime = (s: string) =>
   new Date(s).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 
+/** "11 Nov 2026, 09:30" */
+export const dateTimeFull = (s: string) =>
+  new Date(s).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+/** Value for <input type="datetime-local"> in local time, e.g. 2026-11-11T09:30 */
+export const localDateTimeInput = (d: Date = new Date()) => {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 export const isCompleted = (t: { status: string }) => t.status !== 'Refunded'

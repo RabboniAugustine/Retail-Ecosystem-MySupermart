@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  supabase, friendlyError, fetchAll, createPurchase, payPurchase, voidPurchase, moneyEntry, accountBalances,
-  ACCOUNTS, type Account,
+  supabase, friendlyError, fetchAll, createPurchase, payPurchase, voidPurchase, moneyEntry, deleteMoneyEntry, accountBalances,
+  ACCOUNTS, type Account, type MoneyLine, type DeletedRecord,
 } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { cedi, localDate } from '../lib/format'
-import { presetRange, rangeLabel, type Preset, type Range } from '../lib/ranges'
+import { cedi, dateTimeFull, localDate, localDateTimeInput } from '../lib/format'
+import { presetRange, rangeBounds, rangeLabel, type Preset, type Range } from '../lib/ranges'
 import type { ExpenseRow, Product, Purchase, Supplier } from '../lib/types'
 import { Btn, EmptyState, ErrorBox, Field, Icon, ICONS, Modal, Spinner, StatCard, Th, Td } from '../components/ui'
 import { RangePicker } from '../components/RangePicker'
@@ -21,7 +21,10 @@ export function Accounting({ refresh }: { refresh: number }) {
 
   const [preset, setPreset] = useState<Preset>('month')
   const [range, setRange] = useState<Range>(presetRange('month'))
-  const [tab, setTab] = useState<'purchases' | 'expenses'>('purchases')
+  const [tab, setTab] = useState<'purchases' | 'expenses' | 'money'>('purchases')
+  const [money, setMoney] = useState<MoneyLine[]>([])
+  const [deleteEntry, setDeleteEntry] = useState<MoneyEntryRow | null>(null)
+  const [showMoneyLog, setShowMoneyLog] = useState(false)
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [expenses, setExpenses] = useState<ExpenseRow[]>([])
   const [balances, setBalances] = useState<Record<Account, number> | null>(null)
@@ -42,6 +45,11 @@ export function Accounting({ refresh }: { refresh: number }) {
       ])
       setPurchases(p); setExpenses(e)
       if (isOwner) {
+        const { start, end } = rangeBounds(range)
+        setMoney(await fetchAll<MoneyLine>((a, b) => supabase.from('ms_money_movements')
+          .select('id, account, amount, kind, description, occurred_at, created_by_name, entry_group')
+          .in('kind', ['transfer', 'money_in', 'money_out']).gte('occurred_at', start).lt('occurred_at', end)
+          .order('occurred_at', { ascending: false }).order('id').range(a, b)))
         setBalances(await accountBalances())
         const { data } = await supabase.from('ms_suppliers').select('payable')
         setOwed(((data as { payable: number }[] | null) ?? []).reduce((s, x) => s + Number(x.payable), 0))
@@ -56,6 +64,7 @@ export function Accounting({ refresh }: { refresh: number }) {
   const purchTotal = live.reduce((s, p) => s + Number(p.total), 0)
   const purchDue = live.reduce((s, p) => s + Number(p.total) - Number(p.amount_paid), 0)
   const expTotal = expenses.reduce((s, e) => s + Number(e.amount), 0)
+  const moneyEntries = useMemo(() => groupMoney(money), [money])
 
   const deleteExpense = async (e: ExpenseRow) => {
     if (!window.confirm(`Delete the expense "${e.description}" (${cedi(e.amount)})?`)) return
@@ -92,12 +101,15 @@ export function Accounting({ refresh }: { refresh: number }) {
 
       <div className="stat-card">
         <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-          {([['purchases', `Purchases (${purchases.length})`], ['expenses', `Expenses (${expenses.length})`]] as const).map(([k, l]) => (
+          {([['purchases', `Purchases (${purchases.length})`], ['expenses', `Expenses (${expenses.length})`],
+             ...(isOwner ? [['money', `Money in / out (${moneyEntries.length})`]] as const : [])] as const).map(([k, l]) => (
             <button key={k} className="tab-btn" onClick={() => setTab(k)}
               style={{ background: tab === k ? 'color-mix(in srgb, var(--c-accent) 12%, transparent)' : 'transparent', color: tab === k ? 'var(--c-accent)' : 'var(--c-text-3)' }}>{l}</button>
           ))}
         </div>
-        {loading ? <Spinner /> : tab === 'purchases' ? (
+        {loading ? <Spinner /> : tab === 'money' ? (
+          <MoneyTable entries={moneyEntries} onDelete={setDeleteEntry} onShowLog={() => setShowMoneyLog(true)} />
+        ) : tab === 'purchases' ? (
           purchases.length === 0 ? <EmptyState title="No purchases in this period" sub="Record stock bought from suppliers with Add purchase" /> : (
             <div className="table-wrap">
               <table>
@@ -146,7 +158,9 @@ export function Accounting({ refresh }: { refresh: number }) {
 
       {modal === 'purchase' && <AddPurchase onClose={() => setModal(null)} onSaved={() => { setModal(null); setTab('purchases'); load() }} />}
       {modal === 'expense' && <AddExpense onClose={() => setModal(null)} onSaved={() => { setModal(null); setTab('expenses'); load() }} />}
-      {modal === 'money' && <MoneyEntry onClose={() => setModal(null)} onSaved={() => { setModal(null); load() }} />}
+      {modal === 'money' && <MoneyEntry onClose={() => setModal(null)} onSaved={() => { setModal(null); setTab('money'); load() }} />}
+      {deleteEntry && <DeleteMoneyEntry entry={deleteEntry} onClose={() => setDeleteEntry(null)} onDeleted={() => { setDeleteEntry(null); load() }} />}
+      {showMoneyLog && <DeletedMoneyLog onClose={() => setShowMoneyLog(false)} />}
       {openPurchase != null && <PurchaseDetail id={openPurchase} onClose={() => setOpenPurchase(null)} onChanged={load} />}
     </div>
   )
@@ -456,7 +470,7 @@ function MoneyEntry({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   const [from, setFrom] = useState<Account>('Cash')
   const [to, setTo] = useState<Account>('Bank')
   const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(localDate())
+  const [when, setWhen] = useState(localDateTimeInput())
   const [desc, setDesc] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -467,7 +481,9 @@ function MoneyEntry({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   })[kind], [kind])
   const save = async () => {
     setBusy(true); setError('')
-    try { await moneyEntry(kind, Number(amount), kind === 'money_in' ? null : from, kind === 'money_out' ? null : to, desc, date); onSaved() }
+    const at = new Date(when)
+    if (!when || isNaN(at.getTime())) { setError('Enter the date and time.'); setBusy(false); return }
+    try { await moneyEntry(kind, Number(amount), kind === 'money_in' ? null : from, kind === 'money_out' ? null : to, desc, at.toISOString()); onSaved() }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not save') }
     setBusy(false)
   }
@@ -486,7 +502,7 @@ function MoneyEntry({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         </div>
         <div className="g2">
           <Field label="Amount (₵)"><input autoFocus className="input-field" type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
-          <Field label="Date"><input className="input-field" type="date" value={date} max={localDate()} onChange={e => setDate(e.target.value)} /></Field>
+          <Field label="Date and time"><input className="input-field" type="datetime-local" value={when} max={localDateTimeInput()} onChange={e => setWhen(e.target.value)} /></Field>
         </div>
         <Field label="Description"><input className="input-field" value={desc} onChange={e => setDesc(e.target.value)} placeholder="e.g. Cash deposit at GCB" /></Field>
         <ErrorBox>{error}</ErrorBox>
@@ -499,3 +515,132 @@ function MoneyEntry({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   )
 }
 
+
+// ── Owner: list of money in / out entries, delete a wrong one ────────────────
+type MoneyEntryRow = {
+  group: string; kind: MoneyLine['kind']; at: string; amount: number
+  from: Account | null; to: Account | null; description: string; by: string | null
+}
+
+const KIND_LABEL: Record<MoneyLine['kind'], string> = { transfer: 'Transfer', money_in: 'Money in', money_out: 'Money out' }
+
+/** A transfer is stored as two lines (out of one account, into another); show it as one entry. */
+function groupMoney(lines: MoneyLine[]): MoneyEntryRow[] {
+  const map = new Map<string, MoneyEntryRow>()
+  for (const l of lines) {
+    const key = l.entry_group ?? `line-${l.id}`
+    const e = map.get(key) ?? { group: l.entry_group, kind: l.kind, at: l.occurred_at, amount: Math.abs(Number(l.amount)), from: null, to: null, description: l.description, by: l.created_by_name }
+    if (Number(l.amount) < 0) e.from = l.account; else e.to = l.account
+    if (l.kind === 'transfer' && Number(l.amount) < 0) e.description = l.description
+    map.set(key, e)
+  }
+  return [...map.values()].sort((a, b) => b.at.localeCompare(a.at))
+}
+
+function MoneyTable({ entries, onDelete, onShowLog }: { entries: MoneyEntryRow[]; onDelete: (e: MoneyEntryRow) => void; onShowLog: () => void }) {
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+        <Btn variant="ghost" onClick={onShowLog}><Icon d={ICONS.history} size={14} /> Deleted entries</Btn>
+      </div>
+      {entries.length === 0 ? <EmptyState title="No money in / out entries in this period" sub="Record deposits, transfers, opening balances and withdrawals with Money in / out" /> : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><Th>Date and time</Th><Th>Type</Th><Th>From</Th><Th>To</Th><Th right>Amount</Th><Th>Description</Th><Th>By</Th><Th /></tr></thead>
+            <tbody>
+              {entries.map(e => (
+                <tr key={e.group} className="table-row">
+                  <Td mono muted>{dateTimeFull(e.at)}</Td>
+                  <Td><span className="badge badge-blue">{KIND_LABEL[e.kind]}</span></Td>
+                  <Td>{e.from ?? '—'}</Td>
+                  <Td>{e.to ?? '—'}</Td>
+                  <Td mono strong right>{cedi(e.amount)}</Td>
+                  <Td style={{ whiteSpace: 'normal' }}>{e.description}</Td>
+                  <Td>{e.by ?? '—'}</Td>
+                  <Td>
+                    {e.group && (
+                      <button onClick={() => onDelete(e)} title="Delete this entry" aria-label="Delete this entry"
+                        style={{ background: 'none', border: 'none', color: 'var(--c-text-4)', cursor: 'pointer', display: 'flex' }}>
+                        <Icon d={ICONS.trash} size={14} />
+                      </button>
+                    )}
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  )
+}
+
+function DeleteMoneyEntry({ entry, onClose, onDeleted }: { entry: MoneyEntryRow; onClose: () => void; onDeleted: () => void }) {
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const effect = entry.kind === 'transfer'
+    ? `${cedi(entry.amount)} goes back to ${entry.from} and comes out of ${entry.to}.`
+    : entry.kind === 'money_in' ? `${cedi(entry.amount)} comes out of ${entry.to}.` : `${cedi(entry.amount)} goes back into ${entry.from}.`
+  const run = async () => {
+    setBusy(true); setError('')
+    try { await deleteMoneyEntry(entry.group, reason); onDeleted() } catch (e) { setError(e instanceof Error ? e.message : 'Could not delete') }
+    setBusy(false)
+  }
+  return (
+    <Modal title="Delete money entry" onClose={() => !busy && onClose()} width={460}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 16px', fontSize: 13 }}>
+          <span style={{ color: 'var(--c-text-3)' }}>Type</span><span style={{ color: 'var(--c-text)' }}>{KIND_LABEL[entry.kind]}</span>
+          <span style={{ color: 'var(--c-text-3)' }}>When</span><span>{dateTimeFull(entry.at)}</span>
+          <span style={{ color: 'var(--c-text-3)' }}>Amount</span><span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--c-text)' }}>{cedi(entry.amount)}</span>
+          <span style={{ color: 'var(--c-text-3)' }}>Description</span><span>{entry.description}</span>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--c-text-2)', lineHeight: 1.5 }}>
+          <b style={{ color: 'var(--c-danger)' }}>This is permanent.</b> {effect} It disappears from the Bank Statement. A copy is kept in Deleted entries.
+        </div>
+        <Field label="Reason *"><input autoFocus className="input-field" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. wrong amount, entered twice" /></Field>
+        <ErrorBox>{error}</ErrorBox>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Btn variant="ghost" disabled={busy} onClick={onClose}>Cancel</Btn>
+          <Btn variant="danger" disabled={busy || !reason.trim()} onClick={run}>{busy ? 'Deleting…' : 'Delete entry'}</Btn>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function DeletedMoneyLog({ onClose }: { onClose: () => void }) {
+  const [rows, setRows] = useState<DeletedRecord[] | null>(null)
+  useEffect(() => {
+    supabase.from('ms_deleted_records').select('*').eq('record_type', 'money').order('deleted_at', { ascending: false }).limit(500)
+      .then(({ data }) => setRows((data as DeletedRecord[] | null) ?? []))
+  }, [])
+  const firstLine = (r: DeletedRecord) => (r.snapshot as unknown as { lines?: { occurred_at: string; kind: MoneyLine['kind'] }[] }).lines?.[0]
+  return (
+    <Modal title="Deleted money entries" onClose={onClose} width={720}>
+      {rows == null ? <Spinner /> : rows.length === 0 ? <div style={{ fontSize: 13, color: 'var(--c-text-3)', textAlign: 'center', padding: 20 }}>No money entries have been deleted.</div> : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><Th>Deleted</Th><Th>Entry</Th><Th>Was dated</Th><Th right>Amount</Th><Th>Reason</Th><Th>By</Th></tr></thead>
+            <tbody>
+              {rows.map(r => {
+                const l = firstLine(r)
+                return (
+                  <tr key={r.id} className="table-row">
+                    <Td mono muted>{dateTimeFull(r.deleted_at)}</Td>
+                    <Td strong style={{ whiteSpace: 'normal' }}>{l ? `${KIND_LABEL[l.kind]}: ` : ''}{r.record_code}</Td>
+                    <Td mono muted>{l ? dateTimeFull(l.occurred_at) : '—'}</Td>
+                    <Td mono right>{cedi(r.amount)}</Td>
+                    <Td style={{ whiteSpace: 'normal' }}>{r.reason}</Td>
+                    <Td>{r.deleted_by_name ?? '—'}</Td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Modal>
+  )
+}
