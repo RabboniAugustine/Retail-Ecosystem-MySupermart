@@ -81,8 +81,9 @@ In the Supabase **SQL Editor**, open each file, paste it and click **Run**, **in
 4. `supabase/migrations/004_owner_creates_staff.sql` — owner creates staff logins
 5. `supabase/migrations/005_accounting_reports_utilities.sql` — purchases, money accounts, reports, import / bulk update
 6. `supabase/migrations/006_delete_sales.sql` — owner can delete sales (kept in a deleted-sales log)
+7. `supabase/migrations/007_repair_legacy_tables.sql` — adds columns missing from tables made by the original version of the app
 
-All six are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them in order. Existing products, customers and sales are kept.
+All seven are safe to run again. `supabase/000_all_migrations_in_one.sql` contains all of them (001 → 007) in order. Existing products, customers and sales are kept.
 
 Then in Supabase **Authentication**:
 
